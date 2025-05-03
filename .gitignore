@@ -104,3 +104,6 @@ PHP-Proxy/_removed_template.php
 # Local deployment files
 deploy.sh
 upload.sh
+
+# Screenshots
+screenshots
