@@ -14,7 +14,6 @@ struct CameraView: View {
     @State private var photoOutput: AVCapturePhotoOutput? = AVCapturePhotoOutput()
     private let photoCaptureDelegate = PhotoCaptureDelegate()
     
-    @State private var isProcessing: Bool = false
     @State private var shutterFlash: Bool = false
     
     // Callback for when an image is captured
@@ -70,40 +69,15 @@ struct CameraView: View {
             .opacity(isActive ? 1 : (1 - 0.66))
             
             // Grid overlay for better rock positioning
-            if showGrid && !isProcessing {
+            if showGrid && !shutterFlash {
                 RockPositioningGrid()
                     .stroke(Color.white.opacity(0.5), lineWidth: 1)
                     .frame(width: 250, height: 250)
                     .position(x: (screen?.size.width ?? 0) / 2, y: (screen?.size.height ?? 0) / 2.2)
             }
             
-            // Processing overlay
-            if isProcessing {
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        VStack(spacing: 20) {
-                            ProgressView()
-                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                .scaleEffect(1.5)
-                            
-                            Text("Analyzing your specimen...")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                        }
-                        Spacer()
-                    }
-                    Spacer()
-                }
-                .background(shutterFlash ? Color.white : Color.black.opacity(0.7))
-                .onAppear {
-                    withAnimation {
-                        shutterFlash = false
-                    }
-                }
-            }
-            else {
+            // Only show camera controls when not capturing
+            if !shutterFlash {
                 // Top controls
                 VStack {
                     HStack {
@@ -195,7 +169,6 @@ struct CameraView: View {
                                 // Show shutter flash effect
                                 withAnimation {
                                     shutterFlash = true
-                                    isProcessing = true
                                 }
                                 // Take the photo
                                 let settings = AVCapturePhotoSettings()
@@ -235,9 +208,18 @@ struct CameraView: View {
                 }
             }
         }
-        .onChange(of: isProcessing) { value in
-            if value {
-                shutterFlash = true
+        // Flash animation for shutter effect only
+        .overlay(
+            shutterFlash ? Color.white.opacity(0.8).edgesIgnoringSafeArea(.all) : nil
+        )
+        .onChange(of: shutterFlash) { isFlashing in
+            if isFlashing {
+                // Turn off the flash after a brief moment
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    withAnimation {
+                        shutterFlash = false
+                    }
+                }
             }
         }
         .onChange(of: showCollection) { value in
@@ -262,14 +244,20 @@ struct CameraView: View {
         }
         .onChange(of: selectedImage) { selectedImage in
             if let uploadedImage = selectedImage {
-                // Set processing state for uploaded image
-                isProcessing = true
-                shutterFlash = true
+                // Show shutter flash for uploaded image
+                withAnimation {
+                    shutterFlash = true
+                }
                 
-                // Use a short delay to allow processing animation to appear
+                // Use a short delay to allow flash animation to appear
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                     // Pass the uploaded image to the identification service
                     onCaptureImage(uploadedImage)
+                    
+                    // Reset selected image to nil for future uploads
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        self.selectedImage = nil
+                    }
                 }
             }
         }
@@ -310,8 +298,6 @@ struct CameraView: View {
             // Resize image to appropriate size for rock identification
             if let resizedImage = image.resized(toHeight: max(1000, image.size.height)) {
                 self.selectedImage = resizedImage
-                // Set isProcessing to true first to show processing overlay
-                isProcessing = true
                 // Then call onCaptureImage with the captured image
                 DispatchQueue.main.async {
                     onCaptureImage(resizedImage)
