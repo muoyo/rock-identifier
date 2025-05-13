@@ -73,7 +73,7 @@
 ⏳ **Up Next**
 
 - [ ] **Splash & Onboarding**
-  - [ ] Create app icon and splash screen
+  - [ ] Create app icon and splash screen (add delight through simple nimati)
   - [ ] Design and implement onboarding carousel (4 screens)
   - [ ] Add camera permission request with clear explanation
   - [ ] Implement onboarding data persistence
