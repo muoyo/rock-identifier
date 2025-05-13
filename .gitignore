@@ -92,8 +92,10 @@ iOSInjectionProject/
 
 # PHP Proxy
 PHP-Proxy/tmp/
-PHP-Proxy/openai_proxy.php
 PHP-Proxy/_removed_template.php
+PHP-Proxy/.env
+# Keep example env template
+# PHP-Proxy/.env.example
 
 # API Keys and Secrets
 *.pem
