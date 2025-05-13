@@ -65,7 +65,7 @@
 - [x] Create color assets in Assets.xcassets
 - [x] Set up Git repository
 - [x] Deploy PHP proxy to web server
-- [ ] Create app icon graphics
+- [x] Create app icon graphics
 - [x] Test OpenAI integration with sample rock images
 - [ ] Implement unit tests for core functionality
 
@@ -73,7 +73,7 @@
 ⏳ **Up Next**
 
 - [ ] **Splash & Onboarding**
-  - [ ] Create app icon and splash screen (add delight through simple nimati)
+  - [ ] Create app icon and splash screen (add delight through simple animation)
   - [ ] Design and implement onboarding carousel (4 screens)
   - [ ] Add camera permission request with clear explanation
   - [ ] Implement onboarding data persistence

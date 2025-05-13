@@ -39,4 +39,35 @@ struct Element: Codable {
         self.symbol = symbol
         self.percentage = percentage
     }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle name and symbol
+        if let nameString = try container.decodeIfPresent(String.self, forKey: .name) {
+            name = nameString
+        } else {
+            name = "Unknown"
+        }
+        
+        if let symbolString = try container.decodeIfPresent(String.self, forKey: .symbol) {
+            symbol = symbolString
+        } else {
+            symbol = "?"
+        }
+        
+        // Handle percentage that might be a string
+        if let doubleValue = try? container.decodeIfPresent(Double.self, forKey: .percentage) {
+            percentage = doubleValue
+        } else if let stringValue = try? container.decodeIfPresent(String.self, forKey: .percentage),
+                  let doubleFromString = Double(stringValue.replacingOccurrences(of: "~", with: "").trimmingCharacters(in: .whitespacesAndNewlines)) {
+            percentage = doubleFromString
+        } else {
+            percentage = nil
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case name, symbol, percentage
+    }
 }

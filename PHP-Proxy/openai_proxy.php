@@ -75,6 +75,75 @@
         die("Required environment variables not found in .env file. Please check your configuration.");
     }
     
+    // Extract JSON from markdown code blocks or any surrounding text
+    function cleanAndValidateJson($jsonString) {
+        // Log the original JSON for debugging
+        logError("Original JSON before cleaning (first 500 chars): " . substr($jsonString, 0, 500));
+        
+        // Remove any HTML comments
+        $jsonString = preg_replace('/<!--.*?-->/s', '', $jsonString);
+        
+        // Extract JSON from markdown code blocks
+        if (strpos($jsonString, '```') !== false) {
+            if (preg_match('/```(?:json)?\s*([\s\S]*?)\s*```/s', $jsonString, $matches)) {
+                $jsonString = trim($matches[1]);
+            }
+        }
+        
+        // Extract just the JSON object if the response contains other text
+        if (preg_match('/({(?:[^{}]|(?R))*})/s', $jsonString, $matches)) {
+            $jsonString = $matches[0];
+        }
+        
+        // Fix common JSON formatting issues
+        
+        // Fix the "usees" typo
+        $jsonString = str_replace('"usees":', '"uses":', $jsonString);
+        $jsonString = str_replace('"usees" :', '"uses":', $jsonString);
+        
+        // Fix extra escaped quotes in property names
+        $jsonString = preg_replace('/"\\"([^"]+)\\"\s*:/', '"$1":', $jsonString);
+        
+        // Fix missing quotes around property names
+        $jsonString = preg_replace('/([{,])\s*(\w+)\s*:/', '$1"$2":', $jsonString);
+        
+        // Fix missing commas between properties
+        $jsonString = preg_replace('/}(\s*)"/', '},$1"', $jsonString);
+        
+        // Fix trailing commas
+        $jsonString = preg_replace('/,\s*}/', '}', $jsonString);
+        $jsonString = preg_replace('/,\s*\]/', ']', $jsonString);
+        
+        // Fix strings with colons at the beginning (environment: ": Forms from...") 
+        $jsonString = preg_replace('/"(environment|geologicalAge|formationProcess)"\s*:\s*":\s*/', '"$1":"', $jsonString);
+        
+        // Fix percentage fields that should be numbers, not strings
+        $jsonString = preg_replace('/"percentage"\s*:\s*"([0-9.]+)"/', '"percentage": $1', $jsonString);
+        
+        // Fix specific gravity with tilde
+        $jsonString = preg_replace('/"specificGravity"\s*:\s*"~([0-9.]+)"/', '"specificGravity": "~$1"', $jsonString);
+        
+        // Handle common array formatting issues
+        $jsonString = preg_replace('/"([^"]+)"\s*:\s*\["\s*"\]/', '"$1": []', $jsonString);
+        
+        // Handle null values in elements array
+        $jsonString = preg_replace('/"elements"\s*:\s*\[\s*{\s*"name"\s*:\s*null\s*,\s*"symbol"\s*:\s*null\s*,\s*"percentage"\s*:\s*null\s*}\s*\]/', '"elements": []', $jsonString);
+        
+        // Log the cleaned JSON for debugging
+        logError("Cleaned JSON (first 500 chars): " . substr($jsonString, 0, 500));
+        
+        // Validate the JSON
+        $decodedJson = json_decode($jsonString, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            logError("JSON validation successful");
+            return json_encode($decodedJson, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        }
+        
+        // If validation fails, log the error and return the original string
+        logError("JSON validation failed: " . json_last_error_msg());
+        return $jsonString;
+    }
+    
     //CONFIGURE YOUR CUSTOM PROMPT:
 $custom_prompt = "You are a geological analysis AI specialized in rock and mineral identification. You MUST respond with PERFECTLY VALID JSON that follows strict JSON formatting rules.
 
@@ -92,28 +161,35 @@ Analyze the image and provide identification in valid JSON format matching this 
         \"crystalSystem\": \"Crystal system if applicable\",
         \"cleavage\": \"Cleavage description\",
         \"fracture\": \"Fracture type\",
-        \"specificGravity\": \"Specific gravity value\"
+        \"specificGravity\": \"Specific gravity value\",
+        \"additionalProperties\": {\"property1\": \"value1\"}
     },
     \"chemicalProperties\": {
         \"formula\": \"Chemical formula\",
         \"composition\": \"Main components\",
         \"elements\": [
-            {\"name\": \"Element name\", \"symbol\": \"Element symbol\", \"percentage\": \"80\"}
-        ]
+            {\"name\": \"Element name\", \"symbol\": \"Element symbol\", \"percentage\": 80}
+        ],
+        \"mineralsPresent\": [\"Mineral 1\", \"Mineral 2\"],
+        \"reactivity\": \"Any notable chemical reactions\",
+        \"additionalProperties\": {\"property1\": \"value1\"}
     },
     \"formation\": {
         \"formationType\": \"Formation type\",
         \"environment\": \"Formation environment\",
         \"geologicalAge\": \"Age if known\",
         \"commonLocations\": [\"Location 1\", \"Location 2\"],
-        \"formationProcess\": \"How it forms\"
+        \"associatedMinerals\": [\"Associated Mineral 1\", \"Associated Mineral 2\"],
+        \"formationProcess\": \"How it forms\",
+        \"additionalInfo\": {\"info1\": \"value1\"}
     },
     \"uses\": {
         \"industrial\": [\"Use 1\", \"Use 2\"],
         \"historical\": [\"Historical use\"],
         \"modern\": [\"Modern use\"],
         \"metaphysical\": [\"Metaphysical property\"],
-        \"funFacts\": [\"Interesting fact 1\", \"Interesting fact 2\"]
+        \"funFacts\": [\"Interesting fact 1\", \"Interesting fact 2\"],
+        \"additionalUses\": {\"use1\": \"value1\"}
     }
 }
 
@@ -591,6 +667,21 @@ catch (Exception $e) {
             $message = $openai['choices'][0]['message']['content'];
             logError("Success! Response content length: " . strlen($message));
             
+            // Apply our validation and cleaning function
+            $message = cleanAndValidateJson($message);
+            logError("Cleaned and validated JSON - length: " . strlen($message));
+            
+            // Parse the JSON for additional validation
+            $jsonData = json_decode($message, true);
+            
+            if (json_last_error() === JSON_ERROR_NONE && $jsonData !== null) {
+                // The JSON is valid, we can use it directly
+                logError("JSON validation successful");
+                print($message);
+                exit;
+            }
+            
+            // If JSON validation failed, try the original extraction methods
             // Strip out any HTML comments and markdown code blocks before serving the response
             $message = preg_replace('/<!--.*?-->/s', '', $message);
             $message = preg_replace('/```json\s*([\s\S]*?)\s*```/s', '$1', $message);

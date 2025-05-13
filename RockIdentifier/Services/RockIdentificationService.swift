@@ -5,6 +5,8 @@
 import Foundation
 import SwiftUI
 import Combine
+// Import CommonCrypto for MD5 hashing
+import CommonCrypto
 
 enum IdentificationState: Equatable {
     case idle
@@ -39,56 +41,71 @@ class RockIdentificationService: ObservableObject {
     // Shared secret key for securing API requests
     private let sharedSecretKey = "pEDaZ/K0ITlKb8KALrm73TeNTZXZFEQl3jvIVFNgbEZ4WEjUO6y+gFM6SNKHjxlP"
     
-    // System prompt specifically designed for rock and mineral identification
+    // System prompt specifically designed for rock and mineral identification with strict JSON formatting
     private let systemPrompt = """
-    You are a specialized AI assistant for RockIdentifier, an app that identifies rocks, minerals, crystals, and gemstones from images. Analyze the image and provide detailed rock/mineral identification with high confidence.
+    You are a specialized AI assistant for RockIdentifier, an app that identifies rocks, minerals, crystals, and gemstones from images. Analyze the image and provide detailed rock/mineral identification.
 
-    Respond ONLY in this exact JSON format:
+    IMPORTANT - YOUR RESPONSE MUST BE ONLY VALID JSON IN THIS EXACT FORMAT:
     {
       "name": "Full scientific name",
-      "category": "Rock, Mineral, Crystal, or Gemstone type",
-      "confidence": "0.0-1.0 numeric value representing identification confidence",
+      "category": "Rock/Mineral/Crystal/Gemstone",
+      "confidence": 0.95,
       "physicalProperties": {
-        "color": "Common colors",
-        "hardness": "Mohs scale value or range",
-        "luster": "e.g., Vitreous, Metallic, etc.",
-        "streak": "Color when scraped",
-        "transparency": "Transparent, Translucent, Opaque",
-        "crystalSystem": "If applicable",
-        "cleavage": "If applicable",
-        "fracture": "Type of fracture if relevant",
-        "specificGravity": "Density relative to water"
+        "color": "Common colors and variants",
+        "hardness": "Mohs scale value or range (e.g., 6-7)",
+        "luster": "Type of luster (e.g., Vitreous, Metallic)",
+        "streak": "Color when scraped on unglazed porcelain",
+        "transparency": "Transparent, Translucent, or Opaque",
+        "crystalSystem": "If applicable (e.g., Cubic, Hexagonal)",
+        "cleavage": "If applicable (e.g., Perfect in one direction)",
+        "fracture": "Type of fracture if relevant (e.g., Conchoidal)",
+        "specificGravity": "Density relative to water (e.g., 2.65)"
       },
       "chemicalProperties": {
-        "formula": "Chemical formula if applicable",
-        "composition": "Main chemical components",
+        "formula": "Chemical formula if applicable (e.g., SiO2)",
+        "composition": "Main chemical components in plain text",
         "elements": [
-          {"name": "Element name", "symbol": "Element symbol", "percentage": "approximate % if known"}
-        ]
+          {
+            "name": "Element name",
+            "symbol": "Element symbol",
+            "percentage": 80
+          }
+        ],
+        "mineralsPresent": ["Mineral 1", "Mineral 2"],
+        "reactivity": "Any notable chemical reactions"
       },
       "formation": {
         "formationType": "Igneous, Sedimentary, Metamorphic, etc.",
         "environment": "Where it typically forms",
         "geologicalAge": "When it commonly formed",
         "commonLocations": ["Location 1", "Location 2"],
+        "associatedMinerals": ["Associated Mineral 1", "Associated Mineral 2"],
         "formationProcess": "Brief description of how it forms"
       },
       "uses": {
         "industrial": ["Industrial use 1", "Industrial use 2"],
-        "historical": ["Historical use 1"],
-        "modern": ["Modern use 1"],
-        "metaphysical": ["Metaphysical property 1"],
+        "historical": ["Historical use 1", "Historical use 2"],
+        "modern": ["Modern use 1", "Modern use 2"],
+        "metaphysical": ["Metaphysical property 1", "Metaphysical property 2"],
         "funFacts": ["Interesting fact 1", "Interesting fact 2"]
       }
     }
+
+    STRICT JSON FORMATTING RULES:
+    1. Your response MUST be PURE JSON with NO explanatory text, markdown, or code blocks
+    2. All property names must be in double quotes: "property": value
+    3. All string values must be in double quotes: "property": "value"
+    4. Numeric values should not have quotes: "confidence": 0.95
+    5. No trailing commas at the end of arrays or objects
+    6. If a property has no value, use null instead of an empty string: "formula": null
+    7. Always use "uses" for the uses object
+    8. Ensure that all nested objects and arrays are properly closed
 
     If you can't identify the specimen with reasonable confidence, or if the image isn't a rock/mineral, respond with:
     {
       "error": "Specific reason for identification failure",
       "suggestions": ["Suggestion 1", "Suggestion 2"]
     }
-
-    IMPORTANT: Always respond with valid, parseable JSON only. No conversational text.
     """
     
     // Function to identify a rock from an image
@@ -139,8 +156,8 @@ class RockIdentificationService: ObservableObject {
             ],
             [
                 "role": "user",
-                "content": "Please identify this rock or mineral",
-                "message": "Please identify this rock or mineral",
+                "content": "Identify this rock or mineral and provide all details in the required JSON format.",
+                "message": "Identify this rock or mineral and provide all details in the required JSON format.",
                 "image": encodedImageString
             ]
         ]
@@ -153,7 +170,7 @@ class RockIdentificationService: ObservableObject {
         }
         
         // Create the hash for security
-        let hash = "\(messagesString)\(sharedSecretKey)".hash()
+        let hash = createHash(from: messagesString + sharedSecretKey)
         
         // Build parameters for API request
         let parameters: [String: String] = [
@@ -180,6 +197,20 @@ class RockIdentificationService: ObservableObject {
                 self.parseResponse(data, originalImage: originalImage)
             }
         }
+    }
+    
+    // Helper function to create MD5 hash
+    private func createHash(from string: String) -> String {
+        let messageData = string.data(using: .utf8)!
+        var digestData = Data(count: Int(CC_MD5_DIGEST_LENGTH))
+        
+        _ = digestData.withUnsafeMutableBytes { digestBytes in
+            messageData.withUnsafeBytes { messageBytes in
+                CC_MD5(messageBytes.baseAddress, CC_LONG(messageData.count), digestBytes.bindMemory(to: UInt8.self).baseAddress)
+            }
+        }
+        
+        return digestData.map { String(format: "%02hhx", $0) }.joined()
     }
     
     // Helper function to parse the API response and create a RockIdentificationResult
@@ -218,66 +249,43 @@ class RockIdentificationService: ObservableObject {
             }
         }
         
-        // Extract JSON from markdown code blocks if needed
-        var processedJsonString = jsonString
+        // Extract JSON from markdown code blocks or any surrounding text
+        let processedJsonString = extractJsonFromResponse(jsonString)
         
-        // Clean up any HTML comments
-        if let regex = try? NSRegularExpression(pattern: "<!--.*?-->", options: .dotMatchesLineSeparators) {
-            let range = NSRange(processedJsonString.startIndex..., in: processedJsonString)
-            processedJsonString = regex.stringByReplacingMatches(in: processedJsonString, options: [], range: range, withTemplate: "")
-        }
-        
-        // Extract JSON from markdown code blocks
-        if processedJsonString.contains("```") {
-            let pattern = "```[\\s\\S]*?\\n([\\s\\S]*?)\\n```"
-            if let regex = try? NSRegularExpression(pattern: pattern),
-               let match = regex.firstMatch(in: processedJsonString, range: NSRange(processedJsonString.startIndex..., in: processedJsonString)) {
-                if let range = Range(match.range(at: 1), in: processedJsonString) {
-                    processedJsonString = String(processedJsonString[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-            }
-        }
-        
-        // Try to parse the JSON
         do {
-            print("Processed JSON string: \(processedJsonString.prefix(200))")
+            print("Attempting to parse JSON: \(processedJsonString.prefix(200))")
             
-            // First try standard parsing - extract just the JSON object
-            if let startIdx = processedJsonString.firstIndex(of: "{"),
-               let endIdx = processedJsonString.lastIndex(of: "}") {
-                let jsonSubstring = processedJsonString[startIdx...endIdx]
-                print("Extracted JSON substring: \(jsonSubstring.prefix(200))")
-                let jsonData = Data(jsonSubstring.utf8)
-                
-                let decoder = JSONDecoder()
+            // Try to decode with the standard decoder first
+            let decoder = JSONDecoder()
+            
+            if let jsonData = processedJsonString.data(using: .utf8) {
                 do {
-                    print("Attempting standard JSON parsing...")
                     let response = try decoder.decode(IdentificationResponse.self, from: jsonData)
-                    print("Standard parsing successful! Rock identified as: \(response.name)")
+                    print("Successfully parsed complete JSON response")
+                    // Successfully parsed
                     createSuccessResult(response: response, originalImage: originalImage)
                     return
-                } catch {
-                    print("Standard parsing failed: \(error.localizedDescription)")
+                } catch let error {
+                    print("Standard JSON parsing failed: \(error)")
                 }
-            } else {
-                print("Could not find JSON object delimiters in the processed string")
             }
             
-            // First try cleaning up the JSON
-            let cleanedJson = cleanJsonString(processedJsonString)
+            // If standard parsing fails, try with various fallback methods
             
-            // Try to decode with the cleaned JSON
-            let decoder = JSONDecoder()
+            // Method 1: Try to clean the JSON string
+            let cleanedJson = cleanJsonString(processedJsonString)
             if let jsonData = cleanedJson.data(using: .utf8),
                let response = try? decoder.decode(IdentificationResponse.self, from: jsonData) {
-                // Successfully parsed
+                // Successfully parsed with cleaned JSON
+                print("Parsed successfully after cleaning JSON")
                 createSuccessResult(response: response, originalImage: originalImage)
                 return
             }
             
-            // Try to extract basic info manually
+            // Method 2: Try to extract basic info manually
             if let extractedData = extractRockData(from: processedJsonString) {
                 // We could extract partial data
+                print("Creating partial result from extracted data")
                 createPartialResult(extractedData: extractedData, originalImage: originalImage)
                 return
             }
@@ -287,6 +295,37 @@ class RockIdentificationService: ObservableObject {
         } catch {
             state = .error("Failed to process result: \(error.localizedDescription)")
         }
+    }
+    
+    // Helper function to extract JSON from response, eliminating markdown blocks or other text
+    private func extractJsonFromResponse(_ response: String) -> String {
+        var processedResponse = response
+        
+        // Remove HTML comments
+        if let regex = try? NSRegularExpression(pattern: "<!--.*?-->", options: .dotMatchesLineSeparators) {
+            let range = NSRange(processedResponse.startIndex..., in: processedResponse)
+            processedResponse = regex.stringByReplacingMatches(in: processedResponse, options: [], range: range, withTemplate: "")
+        }
+        
+        // Extract JSON from markdown code blocks
+        if processedResponse.contains("```") {
+            let pattern = "```(?:json)?\\s*([\\s\\S]*?)\\s*```"
+            if let regex = try? NSRegularExpression(pattern: pattern),
+               let match = regex.firstMatch(in: processedResponse, range: NSRange(processedResponse.startIndex..., in: processedResponse)) {
+                if let range = Range(match.range(at: 1), in: processedResponse) {
+                    processedResponse = String(processedResponse[range]).trimmingCharacters(in: .whitespacesAndNewlines)
+                }
+            }
+        }
+        
+        // Extract just the JSON object if the response contains other text
+        if let startIdx = processedResponse.firstIndex(of: "{"),
+           let endIdx = processedResponse.lastIndex(of: "}") {
+            let jsonSubstring = processedResponse[startIdx...endIdx]
+            processedResponse = String(jsonSubstring)
+        }
+        
+        return processedResponse.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     // Helper function to clean up common JSON issues
@@ -308,6 +347,58 @@ class RockIdentificationService: ObservableObject {
         cleanedJson = cleanedJson.replacingOccurrences(of: "\u{201C}", with: "\"", options: .regularExpression)
         cleanedJson = cleanedJson.replacingOccurrences(of: "\u{201D}", with: "\"", options: .regularExpression)
         
+        // Fix "usees" typo to "uses"
+        cleanedJson = cleanedJson.replacingOccurrences(of: "\"usees\"", with: "\"uses\"")
+        
+        // Fix extra escaped quotes in property names
+        cleanedJson = cleanedJson.replacingOccurrences(of: "\\\"", with: "\"")
+        
+        // Fix trailing commas
+        cleanedJson = cleanedJson.replacingOccurrences(of: ",\\s*}", with: "}", options: .regularExpression)
+        cleanedJson = cleanedJson.replacingOccurrences(of: ",\\s*]\\s*,", with: "]", options: .regularExpression)
+        cleanedJson = cleanedJson.replacingOccurrences(of: ",\\s*]", with: "]", options: .regularExpression)
+        
+        // Fix trailing commas in arrays (problem in the logs: "elements": [],)
+        cleanedJson = cleanedJson.replacingOccurrences(of: "\\[\\s*]\\s*,", with: "[]", options: .regularExpression)
+        
+        // Fix malformed environment strings (from log: "environment": ": Forms from the...")
+        let environmentPattern = "\"environment\"\\s*:\\s*\":\\s*([^\"]+)\""
+        cleanedJson = cleanedJson.replacingOccurrences(of: environmentPattern, with: "\"environment\":\"$1\"", options: .regularExpression)
+        
+        // Fix geologicalAge strings that start with colon
+        let geologicalAgePattern = "\"geologicalAge\"\\s*:\\s*\":\\s*([^\"]+)\""
+        cleanedJson = cleanedJson.replacingOccurrences(of: geologicalAgePattern, with: "\"geologicalAge\":\"$1\"", options: .regularExpression)
+        
+        // Fix specificGravity with ~ prefix (make it a string to prevent parsing issues)
+        let specificGravityPattern = "\"specificGravity\"\\s*:\\s*\"~([0-9.]+)\""
+        cleanedJson = cleanedJson.replacingOccurrences(of: specificGravityPattern, with: "\"specificGravity\":\"~$1\"", options: .regularExpression)
+        
+        // Fix "null" as strings instead of actual null values
+        cleanedJson = cleanedJson.replacingOccurrences(of: ":\\s*\"null\"", with: ":null", options: .regularExpression)
+        
+        // Fix empty arrays with nulls [null] -> []
+        cleanedJson = cleanedJson.replacingOccurrences(of: "\\[\\s*null\\s*]", with: "[]", options: .regularExpression)
+        
+        // Fix string values for numbers (confidence should be a number)
+        let numberValuePattern = "\"confidence\"\\s*:\\s*\"([0-9.]+)\""
+        cleanedJson = cleanedJson.replacingOccurrences(of: numberValuePattern, with: "\"confidence\":$1", options: .regularExpression)
+        
+        // Remove any special invisible characters that might cause issues
+        let cleanString = cleanedJson.components(separatedBy: CharacterSet.controlCharacters).joined()
+        cleanedJson = cleanString.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Log the cleaned JSON for debugging
+        print("Cleaned JSON: \(cleanedJson.prefix(500))")
+        
+        // Final attempt to sanitize the JSON through JSONSerialization
+        if let jsonData = cleanedJson.data(using: .utf8),
+           let jsonObject = try? JSONSerialization.jsonObject(with: jsonData),
+           let sanitizedData = try? JSONSerialization.data(withJSONObject: jsonObject),
+           let sanitizedString = String(data: sanitizedData, encoding: .utf8) {
+            print("Sanitized through JSONSerialization successfully")
+            return sanitizedString
+        }
+        
         return cleanedJson
     }
     
@@ -325,6 +416,15 @@ class RockIdentificationService: ObservableObject {
             if let match = nameRegex.firstMatch(in: jsonString, range: nameRange),
                let valueRange = Range(match.range(at: 1), in: jsonString) {
                 extractedData["name"] = String(jsonString[valueRange])
+            } else {
+                // Try alternative regex pattern
+                let altNamePattern = "name[\"']?\\s*:\\s*[\"']([^\"']+)[\"']"
+                let altNameRegex = try NSRegularExpression(pattern: altNamePattern)
+                
+                if let match = altNameRegex.firstMatch(in: jsonString, range: nameRange),
+                   let valueRange = Range(match.range(at: 1), in: jsonString) {
+                    extractedData["name"] = String(jsonString[valueRange])
+                }
             }
         } catch {
             print("Error extracting rock name: \(error)")
@@ -339,9 +439,23 @@ class RockIdentificationService: ObservableObject {
             if let match = categoryRegex.firstMatch(in: jsonString, range: categoryRange),
                let valueRange = Range(match.range(at: 1), in: jsonString) {
                 extractedData["category"] = String(jsonString[valueRange])
+            } else {
+                // Try alternative regex pattern
+                let altCategoryPattern = "category[\"']?\\s*:\\s*[\"']([^\"']+)[\"']"
+                let altCategoryRegex = try NSRegularExpression(pattern: altCategoryPattern)
+                
+                if let match = altCategoryRegex.firstMatch(in: jsonString, range: categoryRange),
+                   let valueRange = Range(match.range(at: 1), in: jsonString) {
+                    extractedData["category"] = String(jsonString[valueRange])
+                } else {
+                    // Default category if not found
+                    extractedData["category"] = "Rock"
+                }
             }
         } catch {
             print("Error extracting rock category: \(error)")
+            // Default category if extraction fails
+            extractedData["category"] = "Rock"
         }
         
         // Extract confidence if available
@@ -351,13 +465,48 @@ class RockIdentificationService: ObservableObject {
             let confidenceRange = NSRange(jsonString.startIndex..., in: jsonString)
             
             if let match = confidenceRegex.firstMatch(in: jsonString, range: confidenceRange),
-               let valueRange = Range(match.range(at: 1), in: jsonString) {
-                if let confidence = Double(jsonString[valueRange]) {
-                    extractedData["confidence"] = confidence
-                }
+               let valueRange = Range(match.range(at: 1), in: jsonString),
+               let confidence = Double(jsonString[valueRange]) {
+                extractedData["confidence"] = confidence
+            } else {
+                // Default confidence if not found
+                extractedData["confidence"] = 0.7
             }
         } catch {
             print("Error extracting confidence: \(error)")
+            // Default confidence if extraction fails
+            extractedData["confidence"] = 0.7
+        }
+        
+        // Try to extract color information
+        do {
+            let colorPattern = "\"color\"\\s*:\\s*\"([^\"]+)\""
+            let colorRegex = try NSRegularExpression(pattern: colorPattern)
+            let colorRange = NSRange(jsonString.startIndex..., in: jsonString)
+            
+            if let match = colorRegex.firstMatch(in: jsonString, range: colorRange),
+               let valueRange = Range(match.range(at: 1), in: jsonString) {
+                extractedData["color"] = String(jsonString[valueRange])
+            } else {
+                extractedData["color"] = "Various"
+            }
+        } catch {
+            print("Error extracting color: \(error)")
+            extractedData["color"] = "Various"
+        }
+        
+        // Try to extract at least one fun fact
+        do {
+            let funFactsPattern = "\"funFacts\"\\s*:\\s*\\[\\s*\"([^\"]+)\""
+            let funFactsRegex = try NSRegularExpression(pattern: funFactsPattern)
+            let funFactsRange = NSRange(jsonString.startIndex..., in: jsonString)
+            
+            if let match = funFactsRegex.firstMatch(in: jsonString, range: funFactsRange),
+               let valueRange = Range(match.range(at: 1), in: jsonString) {
+                extractedData["funFact"] = String(jsonString[valueRange])
+            }
+        } catch {
+            print("Error extracting fun fact: \(error)")
         }
         
         // Return extracted data if we at least have the name
@@ -369,10 +518,12 @@ class RockIdentificationService: ObservableObject {
         let rockName = extractedData["name"] as? String ?? "Unknown Rock"
         let category = extractedData["category"] as? String ?? "Rock"
         let confidence = extractedData["confidence"] as? Double ?? 0.7
+        let color = extractedData["color"] as? String ?? "Varies"
+        let funFact = extractedData["funFact"] as? String
         
         // Create minimal physical properties
         let physicalProperties = PhysicalProperties(
-            color: "Varies",
+            color: color,
             hardness: "Unknown",
             luster: "Unknown",
             streak: nil,
@@ -401,12 +552,17 @@ class RockIdentificationService: ObservableObject {
         )
         
         // Create minimal uses
+        var funFacts = ["This rock has been identified as \(rockName) with limited information available."]
+        if let fact = funFact {
+            funFacts.append(fact)
+        }
+        
         let uses = Uses(
             industrial: nil,
             historical: nil,
             modern: nil,
             metaphysical: nil,
-            funFacts: ["This rock has been identified as \(rockName) with limited information available."]
+            funFacts: funFacts
         )
         
         // Create the final result
@@ -426,6 +582,7 @@ class RockIdentificationService: ObservableObject {
     
     // Helper function to create a success result from a parsed response
     private func createSuccessResult(response: IdentificationResponse, originalImage: UIImage) {
+        // Create PhysicalProperties from response
         let physicalProperties = PhysicalProperties(
             color: response.physicalProperties.color,
             hardness: response.physicalProperties.hardness,
@@ -435,40 +592,55 @@ class RockIdentificationService: ObservableObject {
             crystalSystem: response.physicalProperties.crystalSystem,
             cleavage: response.physicalProperties.cleavage,
             fracture: response.physicalProperties.fracture,
-            specificGravity: response.physicalProperties.specificGravity
+            specificGravity: response.physicalProperties.specificGravity,
+            additionalProperties: response.physicalProperties.additionalProperties
         )
         
-        let elements = response.chemicalProperties.elements?.map { element in
-            Element(
-                name: element.name,
-                symbol: element.symbol,
-                percentage: element.percentage
-            )
+        // Create Elements from response
+        let elements = response.chemicalProperties.elements?.compactMap { element in
+            // Only create elements with valid data
+            if let name = element.name, let symbol = element.symbol {
+                return Element(
+                    name: name,
+                    symbol: symbol,
+                    percentage: element.percentage
+                )
+            }
+            return nil
         }
         
+        // Create ChemicalProperties from response
         let chemicalProperties = ChemicalProperties(
             formula: response.chemicalProperties.formula,
             composition: response.chemicalProperties.composition,
-            elements: elements
+            elements: elements,
+            mineralsPresent: response.chemicalProperties.mineralsPresent,
+            reactivity: response.chemicalProperties.reactivity,
+            additionalProperties: response.chemicalProperties.additionalProperties
         )
         
+        // Create Formation from response
         let formation = Formation(
             formationType: response.formation.formationType,
             environment: response.formation.environment,
             geologicalAge: response.formation.geologicalAge,
             commonLocations: response.formation.commonLocations,
             associatedMinerals: response.formation.associatedMinerals,
-            formationProcess: response.formation.formationProcess
+            formationProcess: response.formation.formationProcess,
+            additionalInfo: response.formation.additionalInfo
         )
         
+        // Create Uses from response
         let uses = Uses(
             industrial: response.uses.industrial,
             historical: response.uses.historical,
             modern: response.uses.modern,
             metaphysical: response.uses.metaphysical,
-            funFacts: response.uses.funFacts
+            funFacts: response.uses.funFacts,
+            additionalUses: response.uses.additionalUses
         )
         
+        // Create the final RockIdentificationResult
         let result = RockIdentificationResult(
             image: originalImage,
             name: response.name,
@@ -480,6 +652,7 @@ class RockIdentificationService: ObservableObject {
             uses: uses
         )
         
+        // Update state with success
         state = .success(result)
     }
     
@@ -512,18 +685,68 @@ struct PhysicalPropertiesResponse: Codable {
     let cleavage: String?
     let fracture: String?
     let specificGravity: String?
+    let additionalProperties: [String: String]?
 }
 
 struct ChemicalPropertiesResponse: Codable {
     let formula: String?
     let composition: String
     let elements: [ElementResponse]?
+    let mineralsPresent: [String]?
+    let reactivity: String?
+    let additionalProperties: [String: String]?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        formula = try container.decodeIfPresent(String.self, forKey: .formula)
+        composition = try container.decode(String.self, forKey: .composition)
+        reactivity = try container.decodeIfPresent(String.self, forKey: .reactivity)
+        additionalProperties = try container.decodeIfPresent([String: String].self, forKey: .additionalProperties)
+        
+        // Handle minerals present array which might contain nulls
+        if let mineralsArray = try? container.decodeIfPresent([String?].self, forKey: .mineralsPresent) {
+            mineralsPresent = mineralsArray.compactMap { $0 } // Filter out nil values
+        } else {
+            mineralsPresent = nil
+        }
+        
+        // Handle elements array which might be empty or malformed
+        do {
+            elements = try container.decodeIfPresent([ElementResponse].self, forKey: .elements)
+        } catch {
+            print("Error decoding elements array: \(error)")
+            elements = []
+        }
+    }
 }
 
 struct ElementResponse: Codable {
-    let name: String
-    let symbol: String
+    let name: String?
+    let symbol: String?
     let percentage: Double?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle optional name and symbol
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
+        
+        // Handle percentage that might be a string or double
+        if let doubleValue = try? container.decodeIfPresent(Double.self, forKey: .percentage) {
+            percentage = doubleValue
+        } else if let stringValue = try? container.decodeIfPresent(String.self, forKey: .percentage) {
+            // Try to convert string to double
+            percentage = Double(stringValue.replacingOccurrences(of: "~", with: "").trimmingCharacters(in: .whitespaces))
+        } else {
+            percentage = nil
+        }
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case name, symbol, percentage
+    }
 }
 
 struct FormationResponse: Codable {
@@ -533,6 +756,31 @@ struct FormationResponse: Codable {
     let commonLocations: [String]?
     let associatedMinerals: [String]?
     let formationProcess: String
+    let additionalInfo: [String: String]?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        formationType = try container.decode(String.self, forKey: .formationType)
+        environment = try container.decode(String.self, forKey: .environment)
+        geologicalAge = try container.decodeIfPresent(String.self, forKey: .geologicalAge)
+        formationProcess = try container.decode(String.self, forKey: .formationProcess)
+        additionalInfo = try container.decodeIfPresent([String: String].self, forKey: .additionalInfo)
+        
+        // Handle commonLocations array which might contain nulls
+        if let locationsArray = try? container.decodeIfPresent([String?].self, forKey: .commonLocations) {
+            commonLocations = locationsArray.compactMap { $0 } // Filter out nil values
+        } else {
+            commonLocations = nil
+        }
+        
+        // Handle associatedMinerals array which might contain nulls
+        if let mineralsArray = try? container.decodeIfPresent([String?].self, forKey: .associatedMinerals) {
+            associatedMinerals = mineralsArray.compactMap { $0 } // Filter out nil values
+        } else {
+            associatedMinerals = nil
+        }
+    }
 }
 
 struct UsesResponse: Codable {
@@ -541,6 +789,46 @@ struct UsesResponse: Codable {
     let modern: [String]?
     let metaphysical: [String]?
     let funFacts: [String]
+    let additionalUses: [String: String]?
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Handle arrays that might contain nulls
+        if let industrialArray = try? container.decodeIfPresent([String?].self, forKey: .industrial) {
+            industrial = industrialArray.compactMap { $0 }
+        } else {
+            industrial = nil
+        }
+        
+        if let historicalArray = try? container.decodeIfPresent([String?].self, forKey: .historical) {
+            historical = historicalArray.compactMap { $0 }
+        } else {
+            historical = nil
+        }
+        
+        if let modernArray = try? container.decodeIfPresent([String?].self, forKey: .modern) {
+            modern = modernArray.compactMap { $0 }
+        } else {
+            modern = nil
+        }
+        
+        if let metaphysicalArray = try? container.decodeIfPresent([String?].self, forKey: .metaphysical) {
+            metaphysical = metaphysicalArray.compactMap { $0 }
+        } else {
+            metaphysical = nil
+        }
+        
+        additionalUses = try container.decodeIfPresent([String: String].self, forKey: .additionalUses)
+        
+        // Required field with no nulls allowed - handle this last to avoid multiple initialization
+        if let factsArray = try? container.decode([String?].self, forKey: .funFacts) {
+            let filtered = factsArray.compactMap { $0 }
+            funFacts = filtered.isEmpty ? ["No additional information available."] : filtered
+        } else {
+            funFacts = ["No additional information available."]
+        }
+    }
 }
 
 struct IdentificationErrorResponse: Codable {
@@ -556,22 +844,3 @@ struct IdentificationErrorResponse: Codable {
         case debugInfo = "debug_info"
     }
 }
-
-// String extension for creating MD5 hash
-extension String {
-    func hash() -> String {
-        let messageData = self.data(using:.utf8)!
-        var digestData = Data(count: Int(CC_MD5_DIGEST_LENGTH))
-        
-        _ = digestData.withUnsafeMutableBytes {digestBytes in
-            messageData.withUnsafeBytes {messageBytes in
-                CC_MD5(messageBytes.baseAddress, CC_LONG(messageData.count), digestBytes.bindMemory(to: UInt8.self).baseAddress)
-            }
-        }
-        
-        return digestData.map { String(format: "%02hhx", $0) }.joined()
-    }
-}
-
-// Import CommonCrypto for MD5 hashing
-import CommonCrypto
