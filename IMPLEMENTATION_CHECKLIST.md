@@ -67,7 +67,7 @@
 - [x] Deploy PHP proxy to web server
 - [x] Create app icon graphics
 - [x] Test OpenAI integration with sample rock images
-- [ ] Implement unit tests for core functionality
+- [x] Implement unit tests for core functionality
 
 ## Phase 2: UI Implementation - Main Screens
 ⏳ **Up Next**
