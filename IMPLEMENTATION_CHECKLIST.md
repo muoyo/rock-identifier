@@ -78,13 +78,13 @@
   - [x] Add camera permission request with clear explanation
   - [x] Implement onboarding data persistence
 
-- [ ] **Camera Interface**
-  - [ ] Adapt CameraView for rock positioning guide
-  - [ ] Add remaining identifications counter
-  - [ ] Implement photo library access
-  - [ ] Create capture button with animation
-  - [ ] Add clear positioning and lighting guidance
-  - [ ] Optimize camera settings for close-up photography
+- [x] **Camera Interface**
+  - [x] Adapt CameraView for rock positioning guide
+  - [x] Add remaining identifications counter
+  - [x] Implement photo library access
+  - [x] Create capture button with animation
+  - [x] Add clear positioning and lighting guidance
+  - [x] Optimize camera settings for close-up photography
 
 - [ ] **Processing Screen**
   - [ ] Design animated processing interface

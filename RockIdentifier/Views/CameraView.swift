@@ -68,12 +68,21 @@ struct CameraView: View {
             }
             .opacity(isActive ? 1 : (1 - 0.66))
             
-            // Grid overlay for better rock positioning
+            // Enhanced grid overlay for better rock positioning
             if showGrid && !shutterFlash {
-                RockPositioningGrid()
-                    .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                    .frame(width: 250, height: 250)
-                    .position(x: (screen?.size.width ?? 0) / 2, y: (screen?.size.height ?? 0) / 2.2)
+                ZStack {
+                    // Shadow backdrop for visibility in various lighting conditions
+                    RockPositioningGrid()
+                        .stroke(Color.black.opacity(0.3), lineWidth: 3)
+                        .frame(width: 260, height: 260)
+                    
+                    // Main grid with animation
+                    RockPositioningGrid()
+                        .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+                        .frame(width: 250, height: 250)
+                        .animation(Animation.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: showGrid)
+                }
+                .position(x: (screen?.size.width ?? 0) / 2, y: (screen?.size.height ?? 0) / 2.2)
             }
             
             // Only show camera controls when not capturing
@@ -81,14 +90,26 @@ struct CameraView: View {
                 // Top controls
                 VStack {
                     HStack {
-                        // Remaining identifications counter
-                        Text("\(remainingIdentifications) identifications left")
-                            .font(.caption)
-                            .padding(8)
-                            .background(Color.black.opacity(0.6))
-                            .foregroundColor(.white)
-                            .cornerRadius(15)
-                            .padding(.leading)
+                        // Remaining identifications counter (hard limit of 3)
+                        HStack(spacing: 4) {
+                        Image(systemName: "camera.viewfinder")
+                        .foregroundColor(remainingIdentifications < 2 ? .orange : .green)
+                        .font(.system(size: 12))
+                        
+                        Text("\(remainingIdentifications)/3 remaining")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(remainingIdentifications < 2 ? .orange : .white)
+                        }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(15)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 15)
+                            .stroke(remainingIdentifications < 2 ? Color.orange.opacity(0.7) : Color.green.opacity(0.3), lineWidth: 1)
+                    )
+                    .padding(.leading)
                         
                         Spacer()
                         
@@ -123,15 +144,48 @@ struct CameraView: View {
                     }
                     .padding(.top, (UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0) + 10)
                     
-                    // Guidance text for better photo capture
-                    Text("Position rock in the center, ensure good lighting")
-                        .font(.caption)
-                        .padding(8)
-                        .background(Color.black.opacity(0.6))
-                        .foregroundColor(.white)
-                        .cornerRadius(15)
-                        .padding(.top, 10)
-                        .opacity(showGrid ? 1 : 0)
+                    // Enhanced guidance with context-sensitive tips
+                    VStack(spacing: 5) {
+                        Text("Position rock in the center")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                        
+                        HStack(spacing: 12) {
+                            // Positioning tip
+                            HStack(spacing: 4) {
+                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                    .font(.system(size: 10))
+                                Text("Center")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.white.opacity(0.9))
+                            
+                            // Lighting tip
+                            HStack(spacing: 4) {
+                                Image(systemName: "light.max")
+                                    .font(.system(size: 10))
+                                Text("Good Light")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.white.opacity(0.9))
+                            
+                            // Distance tip
+                            HStack(spacing: 4) {
+                                Image(systemName: "ruler")
+                                    .font(.system(size: 10))
+                                Text("4-8 inches")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.white.opacity(0.9))
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 12)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(15)
+                    .padding(.top, 10)
+                    .opacity(showGrid ? 1 : 0)
                     
                     Spacer()
                 }
@@ -141,20 +195,25 @@ struct CameraView: View {
                     Spacer()
                     
                     HStack {
-                        // Photo library button
+                        // Enhanced photo library button
                         Button(action: {
+                            let haptic = UIImpactFeedbackGenerator(style: .medium)
+                            haptic.impactOccurred()
                             showImagePicker = true
                         }) {
-                            Image(systemName: "photo.on.rectangle")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 30, height: 30, alignment: .center)
-                                .clipped()
-                                .padding(22)
-                                .background(Color.black.opacity(0.5))
-                                .foregroundColor(.white)
-                                .cornerRadius(40)
+                            ZStack {
+                                Circle()
+                                    .fill(Color.black.opacity(0.6))
+                                    .frame(width: 70, height: 70)
+                                
+                                Image(systemName: "photo.on.rectangle")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 26, height: 26)
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .buttonStyle(ScaleButtonStyle())
                         .sheet(isPresented: $showImagePicker) {
                             PhotoPicker(isPresented: $showImagePicker, selectedImage: $selectedImage, filename: $filename)
                                 .accentColor(.blue)
@@ -162,46 +221,71 @@ struct CameraView: View {
                         
                         Spacer()
                         
-                        // Camera capture button
+                        // Enhanced camera capture button with animation
                         Button(action: {
                             if let photoOutput = photoOutput {
                                 print("==> capturePhoto")
-                                // Show shutter flash effect
-                                withAnimation {
+                                // Haptic feedback for better user experience
+                                let haptic = UIImpactFeedbackGenerator(style: .rigid)
+                                haptic.impactOccurred()
+                                
+                                // Show shutter flash effect with improved animation
+                                withAnimation(.easeInOut(duration: 0.2)) {
                                     shutterFlash = true
                                 }
-                                // Take the photo
+                                
+                                // Take the photo with optimized settings
                                 let settings = AVCapturePhotoSettings()
+                                settings.isHighResolutionPhotoEnabled = true
+                                if self.flashOn {
+                                    settings.flashMode = .on
+                                }
+                                
                                 photoOutput.capturePhoto(with: settings, delegate: photoCaptureDelegate)
                             }
                         }) {
-                            Image(systemName: "camera")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 35, alignment: .center)
-                                .clipped()
-                                .padding(25)
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .clipShape(Circle())
+                            ZStack {
+                                // Outer ring
+                                Circle()
+                                    .stroke(Color.white, lineWidth: 3)
+                                    .frame(width: 88, height: 88)
+                                
+                                // Inner button
+                                Circle()
+                                    .fill(Color.blue)
+                                    .frame(width: 76, height: 76)
+                                
+                                // Camera icon
+                                Image(systemName: "camera")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 32, alignment: .center)
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .buttonStyle(CaptureButtonStyle())
                         
                         Spacer()
                         
-                        // Collection button
+                        // Enhanced collection button
                         Button(action: {
+                            let haptic = UIImpactFeedbackGenerator(style: .medium)
+                            haptic.impactOccurred()
                             showCollection.toggle()
                         }) {
-                            Image(systemName: "square.grid.2x2")
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: 30, alignment: .center)
-                                .clipped()
-                                .padding(22)
-                                .background(Color.black.opacity(0.5))
-                                .foregroundColor(.white)
-                                .cornerRadius(40)
+                            ZStack {
+                                Circle()
+                                    .fill(Color.black.opacity(0.6))
+                                    .frame(width: 70, height: 70)
+                                
+                                Image(systemName: "square.grid.2x2")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: 26, alignment: .center)
+                                    .foregroundColor(.white)
+                            }
                         }
+                        .buttonStyle(ScaleButtonStyle())
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 20 + (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0))
@@ -210,13 +294,26 @@ struct CameraView: View {
         }
         // Flash animation for shutter effect only
         .overlay(
-            shutterFlash ? Color.white.opacity(0.8).edgesIgnoringSafeArea(.all) : nil
+            shutterFlash ? 
+                ZStack {
+                    // Flash effect
+                    Color.white.opacity(0.85).edgesIgnoringSafeArea(.all)
+                    
+                    // Subtle capture animation
+                    Circle()
+                        .stroke(Color.blue.opacity(0.5), lineWidth: 5)
+                        .frame(width: 100, height: 100)
+                        .scaleEffect(shutterFlash ? 1.5 : 1.0)
+                        .opacity(shutterFlash ? 0 : 1)
+                        .animation(.easeOut(duration: 0.3), value: shutterFlash)
+                }
+                : nil
         )
         .onChange(of: shutterFlash) { isFlashing in
             if isFlashing {
-                // Turn off the flash after a brief moment
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                    withAnimation {
+                // Turn off the flash after a brief moment with improved timing
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                    withAnimation(.easeOut(duration: 0.15)) {
                         shutterFlash = false
                     }
                 }
@@ -328,13 +425,15 @@ struct CameraView: View {
     }
 }
 
-// Rock positioning grid shape
+// Enhanced rock positioning grid with depth guide
 struct RockPositioningGrid: Shape {
     func path(in rect: CGRect) -> Path {
         var path = Path()
         
-        // Outer border
-        path.addRect(rect)
+        // Outer border with rounded corners
+        let cornerRadius: CGFloat = 8
+        let roundedRect = CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height)
+        path.addRoundedRect(in: roundedRect, cornerSize: CGSize(width: cornerRadius, height: cornerRadius))
         
         // Cross in center
         let centerX = rect.width / 2
@@ -348,8 +447,9 @@ struct RockPositioningGrid: Shape {
         path.move(to: CGPoint(x: centerX, y: centerY - 15))
         path.addLine(to: CGPoint(x: centerX, y: centerY + 15))
         
-        // Corner brackets
-        let bracketSize: CGFloat = 20
+        // Corner brackets with improved visibility
+        let bracketSize: CGFloat = 25
+        let bracketThickness: CGFloat = 3 // This won't affect line thickness but adds visual emphasis
         
         // Top-left bracket
         path.move(to: CGPoint(x: rect.minX, y: rect.minY + bracketSize))
@@ -371,11 +471,40 @@ struct RockPositioningGrid: Shape {
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY - bracketSize))
         
+        // Add depth marker circles - indicates ideal focusing distance
+        let outerRadius: CGFloat = 12
+        let innerRadius: CGFloat = 5
+        
+        // Outer circle
+        path.addEllipse(in: CGRect(x: centerX - outerRadius, y: centerY - outerRadius, 
+                                   width: outerRadius * 2, height: outerRadius * 2))
+        
+        // Inner circle
+        path.addEllipse(in: CGRect(x: centerX - innerRadius, y: centerY - innerRadius, 
+                                   width: innerRadius * 2, height: innerRadius * 2))
+        
         return path
     }
 }
 
-// Reuse CameraPreviewView and PhotoCaptureDelegate from template
+// Button styles for camera controls
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.92 : 1)
+            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+struct CaptureButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.88 : 1)
+            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
+    }
+}
+
+// Enhanced CameraPreviewView for rock photography
 struct CameraPreviewView: UIViewRepresentable {
     var captureSession: AVCaptureSession
     var photoOutput: AVCapturePhotoOutput
@@ -388,23 +517,47 @@ struct CameraPreviewView: UIViewRepresentable {
         captureSession.sessionPreset = .photo
         
         if let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
-            // Configure device for rock photography (focus, exposure, etc.)
+            // Configure device for optimized rock photography (focus, exposure, etc.)
             do {
                 try videoDevice.lockForConfiguration()
                 
-                // Enable auto focus
+                // Enable auto focus with closer minimum focus distance
                 if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
                     videoDevice.focusMode = .continuousAutoFocus
                 }
                 
-                // Enable auto exposure
-                if videoDevice.isExposureModeSupported(.continuousAutoExposure) {
-                    videoDevice.exposureMode = .continuousAutoExposure
+                // Set focus point to center for rock photography
+                if videoDevice.isFocusPointOfInterestSupported {
+                    videoDevice.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
                 }
                 
-                // Enable macro mode if available (for detailed rock textures)
+                // Enable auto exposure optimized for close-up objects
+                if videoDevice.isExposureModeSupported(.continuousAutoExposure) {
+                    videoDevice.exposureMode = .continuousAutoExposure
+                    // Set exposure point to center
+                    if videoDevice.isExposurePointOfInterestSupported {
+                        videoDevice.exposurePointOfInterest = CGPoint(x: 0.5, y: 0.5)
+                    }
+                }
+                
+                // Set minimum focus distance if available
                 if #available(iOS 15.0, *) {
-                    // In real implementation, would use proper macro mode APIs
+                    // Set to closest focus distance for macro-like effect
+                    if videoDevice.isLockingFocusWithCustomLensPositionSupported {
+                        // Using a near value for close focus (0.0 is infinity, 1.0 is closest)
+                        // For rock detail, we want closer focus, around 0.8-0.9
+                        videoDevice.setFocusModeLocked(lensPosition: 0.85) { _ in
+                            // After setting the initial focus, switch back to continuous
+                            try? videoDevice.lockForConfiguration()
+                            videoDevice.focusMode = .continuousAutoFocus
+                            videoDevice.unlockForConfiguration()
+                        }
+                    }
+                }
+                
+                // Optimize white balance for rock colors
+                if videoDevice.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                    videoDevice.whiteBalanceMode = .continuousAutoWhiteBalance
                 }
                 
                 videoDevice.unlockForConfiguration()
@@ -416,15 +569,18 @@ struct CameraPreviewView: UIViewRepresentable {
                   captureSession.canAddInput(videoDeviceInput) else { return view }
             captureSession.addInput(videoDeviceInput)
             
-            // Add photo output
+            // Add photo output with optimized settings for rock detail capture
             guard captureSession.canAddOutput(photoOutput) else { return view }
             captureSession.addOutput(photoOutput)
             
-            // Configure high quality photo output
+            // Configure maximum quality photo output for detailed rock textures
             photoOutput.isHighResolutionCaptureEnabled = true
+            
+            // Configure for high quality output
             if #available(iOS 13.0, *) {
                 photoOutput.maxPhotoQualityPrioritization = .quality
             }
+            
             
             // Add preview layer
             let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
