@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="crystalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#BA68C8" />
+      <stop offset="100%" stop-color="#7B1FA2" />
+    </linearGradient>
+    <linearGradient id="crystalGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CE93D8" />
+      <stop offset="100%" stop-color="#9C27B0" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+      <feOffset dx="2" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge> 
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/> 
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background Elements -->
+  <circle cx="256" cy="256" r="180" fill="white" opacity="0.08" />
+  <circle cx="256" cy="256" r="140" fill="white" opacity="0.05" />
+  
+  <!-- Crystal -->
+  <g filter="url(#shadow)">
+    <path d="M256,90 L160,150 L160,280 L256,340 L352,280 L352,150 Z" fill="url(#crystalGrad)" />
+    <path d="M256,90 L160,150 L256,210 L352,150 Z" fill="url(#crystalGrad2)" opacity="0.9" />
+    <path d="M160,150 L160,280 L256,210 Z" fill="#8E24AA" opacity="0.7" />
+    <path d="M352,150 L352,280 L256,210 Z" fill="#6A1B9A" opacity="0.8" />
+  </g>
+  
+  <!-- Information Cards -->
+  <g transform="translate(180, 220)">
+    <rect x="-70" y="-40" width="140" height="80" rx="10" fill="white" opacity="0.9" filter="url(#shadow)" />
+    <line x1="-50" y1="-20" x2="50" y2="-20" stroke="#E1BEE7" stroke-width="3" />
+    <line x1="-50" y1="0" x2="30" y2="0" stroke="#E1BEE7" stroke-width="3" />
+    <line x1="-50" y1="20" x2="40" y2="20" stroke="#E1BEE7" stroke-width="3" />
+  </g>
+  
+  <g transform="translate(310, 170)">
+    <rect x="-50" y="-30" width="100" height="60" rx="8" fill="white" opacity="0.9" filter="url(#shadow)" />
+    <circle cx="-30" cy="0" r="10" fill="#CE93D8" />
+    <line x1="-10" y1="-10" x2="30" y2="-10" stroke="#E1BEE7" stroke-width="3" />
+    <line x1="-10" y1="10" x2="20" y2="10" stroke="#E1BEE7" stroke-width="3" />
+  </g>
+  
+  <g transform="translate(190, 140)">
+    <rect x="-40" y="-25" width="80" height="50" rx="8" fill="white" opacity="0.9" filter="url(#shadow)" />
+    <path d="M-20,-5 L-10,5 L0,-10 L10,5 L20,-5" fill="none" stroke="#CE93D8" stroke-width="2" />
+  </g>
+  
+  <!-- Sparkles -->
+  <g opacity="0.9">
+    <circle cx="200" cy="130" r="5" fill="white">
+      <animate attributeName="opacity" values="0.9;0.3;0.9" dur="2s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="320" cy="240" r="4" fill="white">
+      <animate attributeName="opacity" values="0.3;0.9;0.3" dur="2.5s" repeatCount="indefinite" />
+    </circle>
+    <circle cx="180" cy="280" r="6" fill="white">
+      <animate attributeName="opacity" values="0.5;0.9;0.5" dur="1.8s" repeatCount="indefinite" />
+    </circle>
+    
+    <!-- Star sparkles -->
+    <path d="M380,170 L385,180 L395,180 L387,187 L390,197 L380,192 L370,197 L373,187 L365,180 L375,180 Z" fill="white">
+      <animate attributeName="opacity" values="0.9;0.4;0.9" dur="3s" repeatCount="indefinite" />
+    </path>
+    <path d="M165,190 L168,196 L175,196 L169,200 L171,206 L165,202 L159,206 L161,200 L155,196 L162,196 Z" fill="white">
+      <animate attributeName="opacity" values="0.4;0.9;0.4" dur="2.2s" repeatCount="indefinite" />
+    </path>
+  </g>
+</svg>

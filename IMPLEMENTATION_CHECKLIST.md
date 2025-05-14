@@ -72,11 +72,11 @@
 ## Phase 2: UI Implementation - Main Screens
 ⏳ **Up Next**
 
-- [ ] **Splash & Onboarding**
+- [x] **Splash & Onboarding**
   - [x] Create splash screen (add delight through simple animation)
-  - [ ] Design and implement onboarding carousel (4 screens)
-  - [ ] Add camera permission request with clear explanation
-  - [ ] Implement onboarding data persistence
+  - [x] Design and implement onboarding carousel (4 screens)
+  - [x] Add camera permission request with clear explanation
+  - [x] Implement onboarding data persistence
 
 - [ ] **Camera Interface**
   - [ ] Adapt CameraView for rock positioning guide
