@@ -32,6 +32,10 @@ enum IdentificationState: Equatable {
 
 class RockIdentificationService: ObservableObject {
     @Published var state: IdentificationState = .idle
+    @Published var currentImage: UIImage? // Store the current image being processed
+    
+    // Toggle between mock data and real API calls
+    @Published var useMockData: Bool = true // Set to true by default for development
     
     private let connectionRequest = ConnectionRequest()
     
@@ -111,8 +115,16 @@ class RockIdentificationService: ObservableObject {
     // Function to identify a rock from an image
     func identifyRock(from image: UIImage) {
         state = .processing
+        currentImage = image // Store the current image
         
-        // Encode the image data - reduce size for better reliability and API compatibility
+        // Check if we should use mock data instead of real API
+        if useMockData {
+            print("Using mock data for rock identification")
+            createMockIdentificationResult(for: image)
+            return
+        }
+        
+        // If not using mock data, proceed with real API call
         // OpenAI Vision API works best with images around 512-1024px
         guard let resizedImage = image.resized(toHeight: 600),
               let imageData = resizedImage.jpegData(compressionQuality: 0.7) else {
@@ -136,6 +148,76 @@ class RockIdentificationService: ObservableObject {
         
         // Process with the standard-sized image
         identifyWithPreparedImage(imageData, originalImage: image)
+    }
+    
+    // Create a mock rock identification result for testing
+    private func createMockIdentificationResult(for image: UIImage) {
+        // Simulate a delay for the identification process
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            // Create mock elements
+            let siliconElement = Element(name: "Silicon", symbol: "Si", percentage: 46.7)
+            let oxygenElement = Element(name: "Oxygen", symbol: "O", percentage: 53.3)
+            
+            // Create mock physical properties
+            let physicalProperties = PhysicalProperties(
+                color: "Purple to violet",
+                hardness: "7 (Mohs scale)",
+                luster: "Vitreous",
+                streak: "White",
+                transparency: "Transparent to Translucent",
+                crystalSystem: "Hexagonal",
+                cleavage: "None",
+                fracture: "Conchoidal",
+                specificGravity: "2.65"
+            )
+            
+            // Create mock chemical properties
+            let chemicalProperties = ChemicalProperties(
+                formula: "SiO₂",
+                composition: "Silicon dioxide",
+                elements: [siliconElement, oxygenElement],
+                mineralsPresent: ["Quartz"],
+                reactivity: "None"
+            )
+            
+            // Create mock formation details
+            let formation = Formation(
+                formationType: "Mineral",
+                environment: "Forms in vugs and cavities in igneous rocks",
+                geologicalAge: "Various ages",
+                commonLocations: ["Brazil", "Uruguay", "Zambia", "South Korea", "Russia"],
+                associatedMinerals: ["Quartz", "Calcite", "Fluorite"],
+                formationProcess: "Crystallizes from silicon-rich fluids"
+            )
+            
+            // Create mock uses
+            let uses = Uses(
+                industrial: ["Decorative stones", "Jewelry making", "Ornamental objects"],
+                historical: ["Used by ancient Egyptians for jewelry and amulets", "Believed to protect against intoxication and harm"],
+                modern: ["Decorative gemstone", "Jewelry", "Ornamental objects"],
+                metaphysical: ["Associated with spiritual awareness", "Said to promote calm and balance"],
+                funFacts: [
+                    "The name comes from Ancient Greek 'amethystos' meaning 'not intoxicated'",
+                    "It's the birthstone for February", 
+                    "Amethyst loses its color when heated, turning yellow or orange"
+                ]
+            )
+            
+            // Create the final result
+            let result = RockIdentificationResult(
+                image: image,
+                name: "Amethyst",
+                category: "Quartz Variety",
+                confidence: 0.92,
+                physicalProperties: physicalProperties,
+                chemicalProperties: chemicalProperties,
+                formation: formation,
+                uses: uses
+            )
+            
+            // Update state with success
+            self.state = .success(result)
+        }
     }
     
     // Helper function that handles the actual API request with prepared image data
@@ -842,5 +924,14 @@ struct IdentificationErrorResponse: Codable {
         case suggestions
         case rawResponse = "raw_response"
         case debugInfo = "debug_info"
+    }
+}
+
+// Toggle for mock data
+extension RockIdentificationService {
+    // Toggle mock data on/off
+    func setUseMockData(_ useMock: Bool) {
+        useMockData = useMock
+        print("Rock identification mode: \(useMock ? "MOCK DATA" : "REAL API")")
     }
 }

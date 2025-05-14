@@ -46,11 +46,18 @@ struct ContentView: View {
                 remainingIdentifications: remainingIdentifications
             )
             
-            // Processing view overlay (separate from camera view processing indicator)
+            // Processing view overlay
             if showProcessingView {
-                ProcessingView(isVisible: $showProcessingView)
-                    .zIndex(10) // Ensure it's above other views
-                    .transition(.opacity)
+                ProcessingView(
+                    isVisible: $showProcessingView,
+                    capturedImage: identificationService.currentImage,
+                    onProcessingComplete: { result in
+                        // Update the identification service with the result
+                        identificationService.state = .success(result)
+                    }
+                )
+                .zIndex(10) // Ensure it's above other views
+                .transition(.opacity)
             }
         }
         .edgesIgnoringSafeArea(.all)
