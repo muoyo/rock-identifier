@@ -4,6 +4,7 @@
 
 import SwiftUI
 import AVFoundation
+import UIKit
 
 struct ContentView: View {
     // State for camera activation
@@ -74,7 +75,7 @@ struct ContentView: View {
         .sheet(isPresented: $showResultView) {
             // Show result view after identification
             if case .success(let result) = identificationService.state {
-                RockResultView(
+                EnhancedRockResultView(
                     isPresented: $showResultView,
                     result: result,
                     collectionManager: collectionManager
@@ -617,18 +618,7 @@ struct PropertyRow: View {
     }
 }
 
-// Basic ShareSheet wrapper
-struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        return UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
-        // Nothing to update
-    }
-}
+// ShareSheet implementation moved to dedicated ShareSheet.swift file
 
 // Confidence indicator component
 struct ConfidenceIndicator: View {
