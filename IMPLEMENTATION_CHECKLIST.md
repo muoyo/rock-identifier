@@ -104,21 +104,132 @@
   - [x] Implement confidence indicator
 
 ## Phase 3: Collection Management
-🔄 **Planned**
+⏳ **Up Next**
 
-- [ ] **Collection Interface**
-  - [ ] Design collection grid layout
-  - [ ] Implement filtering (All/Favorites/Recent)
-  - [ ] Create collection item card with preview image
-  - [ ] Add favorite marking functionality
-  - [ ] Implement date tracking for items
-  - [ ] Create empty state for new users
+- [x] **Collection Data Model Refinement**
+  - [x] Review and enhance the existing `CollectionManager` class
+  - [x] Ensure proper encoding/decoding for persistent storage
+  - [x] Add timestamp tracking for sorting by recency
+  - [x] Implement favorite status flag and toggle functionality
+  - [x] Create methods for filtering (All/Favorites/Recent)
 
-- [ ] **Collection Actions**
-  - [ ] Implement swipe-to-delete for collection items
-  - [ ] Add collection editing mode
-  - [ ] Enable bulk selection and actions
-  - [ ] Implement searching and sorting
+- [x] **Create CollectionItem model**
+  - [x] Define properties (id, name, image, date added, favorite status)
+  - [x] Implement Codable protocol for persistence
+  - [x] Add custom sorting methods (by date, alphabetical)
+  - [x] Create a computed property for thumbnail generation
+
+- [x] **Collection View Basic UI**
+  - [x] Design and implement CollectionView
+  - [x] Create basic grid layout with LazyVGrid
+  - [x] Implement navigation title and toolbar
+  - [x] Add segmented control for view filters (All/Favorites/Recent)
+  - [x] Create empty state view with guidance text and illustration
+  - [x] Implement basic loading states
+
+- [x] **CollectionItemCard Component**
+  - [x] Design card UI with image thumbnail
+  - [x] Add rock name label with styling
+  - [x] Create favorite indicator/button
+  - [x] Implement tap gesture for navigation to detail view
+  - [x] Add visual feedback for selection state
+
+- [x] **Collection View Navigation**
+  - [x] Create navigation link to detail view
+  - [x] Set up proper state passing between views
+  - [x] Implement smooth transitions
+  - [x] Add navigation back to collection view
+
+- [x] **Collection Item Detail View**
+  - [x] Create scrollable detail layout
+  - [x] Display full-size specimen image
+  - [x] Add rock name and category labels
+  - [x] Implement all information tabs from result screen
+  - [x] Create action buttons (edit, share, delete)
+
+- [x] **Edit Functionality**
+  - [x] Create edit mode for collection items
+  - [x] Allow name editing
+  - [x] Enable custom notes addition
+  - [ ] Add location tagging option
+  - [x] Implement save/cancel actions
+
+- [x] **Filter Functionality**
+  - [x] Create filter logic in CollectionManager
+  - [x] Connect UI filter controls to data layer
+  - [x] Add visual indicators for active filters
+  - [x] Ensure smooth transitions between filtered views
+
+- [x] **Search Functionality**
+  - [x] Design search bar UI
+  - [x] Implement search algorithm in CollectionManager
+  - [x] Create dynamic results updating
+  - [ ] Add search history functionality
+  - [x] Implement clear search button
+
+- [x] **Sorting Options**
+  - [x] Create sort menu with multiple options
+  - [x] Add date sorting (newest/oldest)
+  - [x] Implement alphabetical sorting (A-Z/Z-A)
+  - [x] Add rock type/category sorting
+  - [x] Save user's preferred sort method
+
+- [x] **Swipe Actions**
+  - [ ] Add swipe-to-favorite gesture
+  - [x] Create swipe-to-delete with confirmation
+  - [ ] Implement haptic feedback for actions
+  - [ ] Add undo functionality for deletions
+
+- [x] **Bulk Selection Mode**
+  - [x] Design selection mode UI toggle
+  - [x] Implement multi-select functionality
+  - [x] Create selection indicator on items
+  - [x] Add selection count indicator
+  - [x] Implement batch actions toolbar
+
+- [x] **Bulk Actions**
+  - [x] Implement batch delete with confirmation
+  - [x] Add bulk favorite/unfavorite toggle
+  - [ ] Create export selected functionality
+  - [ ] Implement share multiple items
+  - [x] Add cancel selection button
+
+- [ ] **Collection Storage Optimization**
+  - [ ] Implement efficient image caching
+  - [ ] Add lazy loading for collection items
+  - [ ] Create pagination if collection grows large
+  - [ ] Optimize memory usage for large collections
+
+- [ ] **Data Persistence Enhancement**
+  - [ ] Add auto-save functionality
+  - [ ] Implement error handling for save failures
+  - [ ] Create backup/restore functionality
+  - [ ] Add data migration support for future updates
+
+- [ ] **Individual Item Sharing**
+  - [ ] Create shareable cards with rock info
+  - [ ] Add social media sharing options
+  - [ ] Implement "share as image" functionality
+  - [ ] Add copy to clipboard option
+
+- [ ] **Collection Export**
+  - [ ] Design export UI and options
+  - [ ] Implement export as PDF functionality
+  - [ ] Add export as spreadsheet option
+  - [ ] Create email export capability
+
+- [ ] **Visual Polish**
+  - [ ] Refine all animations and transitions
+  - [ ] Implement consistent styling
+  - [ ] Add subtle hover/press states
+  - [ ] Optimize for different screen sizes
+
+- [ ] **Performance Enhancement**
+  - [ ] Audit and optimize rendering performance
+  - [ ] Implement view recycling for large collections
+  - [ ] Add progressive loading for images
+  - [ ] Optimize state management
+  - [ ] Add performance monitoring
 
 ## Phase 4: Paywall & Monetization
 🔄 **Planned**
@@ -131,7 +242,7 @@
   - [ ] Add "Continue with Limited Version" option
 
 - [ ] **Subscription Management**
-  - [ ] Connect to StoreKit for in-app purchases
+  - [ ] Connect to RevenueCat for in-app purchases
   - [ ] Implement subscription tracking
   - [ ] Create restore purchases functionality
   - [ ] Add receipt validation

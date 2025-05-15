@@ -4,7 +4,7 @@
 
 import Foundation
 
-struct Uses: Codable {
+struct Uses: Codable, Equatable {
     let industrial: [String]?
     let historical: [String]?
     let modern: [String]?

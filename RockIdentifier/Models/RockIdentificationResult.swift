@@ -5,7 +5,7 @@
 import Foundation
 import SwiftUI
 
-struct RockIdentificationResult: Identifiable, Codable {
+struct RockIdentificationResult: Identifiable, Codable, Equatable {
     let id: UUID
     let image: UIImage?
     let name: String
@@ -18,6 +18,22 @@ struct RockIdentificationResult: Identifiable, Codable {
     let uses: Uses
     var isFavorite: Bool
     var notes: String?
+    
+    // Computed property for thumbnail generation
+    var thumbnail: UIImage? {
+        guard let originalImage = image else { return nil }
+        
+        let size = CGSize(width: 200, height: 200)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
+        let scaledImage = renderer.image { _ in
+            originalImage.draw(in: CGRect(origin: .zero, size: size))
+        }
+        
+        return scaledImage
+    }
     
     enum CodingKeys: String, CodingKey {
         case id
@@ -99,5 +115,18 @@ struct RockIdentificationResult: Identifiable, Codable {
         if let image = image, let imageData = image.jpegData(compressionQuality: 0.7) {
             try container.encode(imageData, forKey: .imageData)
         }
+    }
+    
+    // Implementation for Equatable
+    static func == (lhs: RockIdentificationResult, rhs: RockIdentificationResult) -> Bool {
+        return lhs.id == rhs.id &&
+               lhs.name == rhs.name &&
+               lhs.category == rhs.category &&
+               lhs.confidence == rhs.confidence &&
+               lhs.identificationDate == rhs.identificationDate &&
+               lhs.isFavorite == rhs.isFavorite &&
+               lhs.notes == rhs.notes
+        // We're not comparing images, physicalProperties, chemicalProperties, etc. here
+        // as they are complex objects and only ID is enough to determine equality
     }
 }

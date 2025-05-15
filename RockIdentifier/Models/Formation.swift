@@ -4,7 +4,7 @@
 
 import Foundation
 
-struct Formation: Codable {
+struct Formation: Codable, Equatable {
     let formationType: String
     let environment: String
     let geologicalAge: String?

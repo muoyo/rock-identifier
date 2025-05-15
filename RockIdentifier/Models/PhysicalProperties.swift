@@ -4,7 +4,7 @@
 
 import Foundation
 
-struct PhysicalProperties: Codable {
+struct PhysicalProperties: Codable, Equatable {
     let color: String
     let hardness: String // Mohs scale
     let luster: String

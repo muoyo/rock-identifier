@@ -4,7 +4,7 @@
 
 import Foundation
 
-struct ChemicalProperties: Codable {
+struct ChemicalProperties: Codable, Equatable {
     let formula: String?
     let composition: String
     let elements: [Element]?
@@ -29,7 +29,7 @@ struct ChemicalProperties: Codable {
     }
 }
 
-struct Element: Codable {
+struct Element: Codable, Equatable {
     let name: String
     let symbol: String
     let percentage: Double?
