@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		2AEDC3262DD605B3004372D8 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 2AEDC3252DD605B3004372D8 /* RevenueCat */; };
+		2AEDC3282DD605B3004372D8 /* RevenueCatUI in Frameworks */ = {isa = PBXBuildFile; productRef = 2AEDC3272DD605B3004372D8 /* RevenueCatUI */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		2A904BF52DBBD6A100D93085 /* RockIdentifier.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RockIdentifier.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -36,6 +41,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2AEDC3282DD605B3004372D8 /* RevenueCatUI in Frameworks */,
+				2AEDC3262DD605B3004372D8 /* RevenueCat in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -78,6 +85,8 @@
 			);
 			name = RockIdentifier;
 			packageProductDependencies = (
+				2AEDC3252DD605B3004372D8 /* RevenueCat */,
+				2AEDC3272DD605B3004372D8 /* RevenueCatUI */,
 			);
 			productName = RockIdentifier;
 			productReference = 2A904BF52DBBD6A100D93085 /* RockIdentifier.app */;
@@ -107,6 +116,9 @@
 			);
 			mainGroup = 2A904BEC2DBBD6A100D93085;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2AEDC3242DD605B3004372D8 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 2A904BF62DBBD6A100D93085 /* Products */;
 			projectDirPath = "";
@@ -339,6 +351,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		2AEDC3242DD605B3004372D8 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/RevenueCat/purchases-ios-spm.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2AEDC3252DD605B3004372D8 /* RevenueCat */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2AEDC3242DD605B3004372D8 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCat;
+		};
+		2AEDC3272DD605B3004372D8 /* RevenueCatUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2AEDC3242DD605B3004372D8 /* XCRemoteSwiftPackageReference "purchases-ios-spm" */;
+			productName = RevenueCatUI;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 2A904BED2DBBD6A100D93085 /* Project object */;
 }

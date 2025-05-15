@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import RevenueCat
 
 @main
 struct RockIdentifierApp: App {
@@ -10,11 +11,28 @@ struct RockIdentifierApp: App {
     @State private var showOnboarding = false
     @State private var showSplash = true
     
+    // Initialize the subscription manager as a StateObject so it persists across the app
+    @StateObject private var subscriptionManager = SubscriptionManager()
+    
+    init() {
+        // Configure RevenueCat with your API key
+        Purchases.configure(
+            withAPIKey: RevenueCatConfig.apiKey,
+            appUserID: nil // Let RevenueCat generate a user ID
+        )
+        
+        // Enable debug logging in development
+        if RevenueCatConfig.debugLogs {
+            Purchases.logLevel = .debug
+        }
+    }
+    
     var body: some Scene {
         WindowGroup {
             ZStack {
-                // Main content view
+                // Main content view with subscription manager passed as environment object
                 ContentView()
+                    .environmentObject(subscriptionManager)
                 
                 // Show splash screen
                 if showSplash {
