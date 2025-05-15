@@ -151,7 +151,7 @@
   - [x] Create edit mode for collection items
   - [x] Allow name editing
   - [x] Enable custom notes addition
-  - [ ] Add location tagging option
+  - [x] Add location tagging option
   - [x] Implement save/cancel actions
 
 - [x] **Filter Functionality**
@@ -177,7 +177,7 @@
 - [x] **Swipe Actions**
   - [ ] Add swipe-to-favorite gesture
   - [x] Create swipe-to-delete with confirmation
-  - [ ] Implement haptic feedback for actions
+  - [x] Implement haptic feedback for actions
   - [ ] Add undo functionality for deletions
 
 - [x] **Bulk Selection Mode**
@@ -206,30 +206,30 @@
   - [ ] Create backup/restore functionality
   - [ ] Add data migration support for future updates
 
-- [ ] **Individual Item Sharing**
-  - [ ] Create shareable cards with rock info
-  - [ ] Add social media sharing options
-  - [ ] Implement "share as image" functionality
-  - [ ] Add copy to clipboard option
+- [x] **Individual Item Sharing**
+  - [x] Create shareable cards with rock info
+  - [x] Add social media sharing options
+  - [x] Implement "share as image" functionality
+  - [x] Add copy to clipboard option
 
-- [ ] **Collection Export**
-  - [ ] Design export UI and options
-  - [ ] Implement export as PDF functionality
-  - [ ] Add export as spreadsheet option
-  - [ ] Create email export capability
+- [x] **Collection Export**
+  - [x] Design export UI and options
+  - [x] Implement export as PDF functionality
+  - [x] Add export as spreadsheet option
+  - [x] Create email export capability
 
-- [ ] **Visual Polish**
-  - [ ] Refine all animations and transitions
-  - [ ] Implement consistent styling
-  - [ ] Add subtle hover/press states
-  - [ ] Optimize for different screen sizes
+- [x] **Visual Polish**
+  - [x] Refine all animations and transitions
+  - [x] Implement consistent styling
+  - [x] Add subtle hover/press states
+  - [x] Optimize for different screen sizes
 
-- [ ] **Performance Enhancement**
-  - [ ] Audit and optimize rendering performance
-  - [ ] Implement view recycling for large collections
-  - [ ] Add progressive loading for images
-  - [ ] Optimize state management
-  - [ ] Add performance monitoring
+- [x] **Performance Enhancement**
+  - [x] Audit and optimize rendering performance
+  - [x] Implement view recycling for large collections
+  - [x] Add progressive loading for images
+  - [x] Optimize state management
+  - [x] Add performance monitoring
 
 ## Phase 4: Paywall & Monetization
 🔄 **Planned**
@@ -239,7 +239,7 @@
   - [ ] Add yearly subscription direct purchase option
   - [ ] Design limited-time offer messaging
   - [ ] Implement feature comparison section
-  - [ ] Add "Continue with Limited Version" option
+  - [ ] Add "Continue with Limited Version" option (link should appear after 5-seconds using appropriate animation)
 
 - [ ] **Subscription Management**
   - [ ] Connect to RevenueCat for in-app purchases

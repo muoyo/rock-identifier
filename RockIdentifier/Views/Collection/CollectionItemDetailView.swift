@@ -10,6 +10,13 @@ struct CollectionItemDetailView: View {
     @State private var isEditMode = false
     @State private var editedName = ""
     @State private var editedNotes = ""
+    @State private var editedLocation = ""
+    @State private var showingShareSheet = false
+    @State private var showingDeleteConfirmation = false
+    
+    // Haptic feedback generators
+    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+    let notificationGenerator = UINotificationFeedbackGenerator()
     
     var body: some View {
         ScrollView {
@@ -84,6 +91,28 @@ struct CollectionItemDetailView: View {
                 }
                 .padding(.horizontal)
                 .padding(.top)
+                
+                // Location section
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Location Found")
+                        .font(.headline)
+                    
+                    if isEditMode {
+                        TextField("Where was this found?", text: $editedLocation)
+                            .padding(8)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                    } else {
+                        Text(rock.location ?? "No location information")
+                            .foregroundColor(rock.location == nil ? .secondary : .primary)
+                            .padding(8)
+                            .frame(minHeight: 40, alignment: .topLeading)
+                            .background(Color(.systemGray6))
+                            .cornerRadius(8)
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.top)
             }
             .padding(.bottom, 30)
         }
@@ -101,10 +130,18 @@ struct CollectionItemDetailView: View {
                             }
                             
                             collectionManager.updateNotes(for: rock.id, notes: editedNotes)
+                            collectionManager.updateLocation(for: rock.id, location: editedLocation)
+                            
+                            // Success feedback
+                            notificationGenerator.notificationOccurred(.success)
                         } else {
                             // Enter edit mode
                             editedName = rock.name
                             editedNotes = rock.notes ?? ""
+                            editedLocation = rock.location ?? ""
+                            
+                            // Light haptic feedback
+                            impactGenerator.impactOccurred(intensity: 0.5)
                         }
                         
                         isEditMode.toggle()
@@ -113,6 +150,7 @@ struct CollectionItemDetailView: View {
                     }
                     
                     Button(action: {
+                        impactGenerator.impactOccurred()
                         collectionManager.toggleFavorite(for: rock.id)
                     }) {
                         Image(systemName: rock.isFavorite ? "star.fill" : "star")
@@ -121,13 +159,16 @@ struct CollectionItemDetailView: View {
                     
                     Menu {
                         Button(action: {
-                            // Share functionality would go here
+                            // Share functionality
+                            shareRock()
                         }) {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
                         
                         Button(action: {
-                            // Delete functionality would go here
+                            // Delete functionality
+                            impactGenerator.impactOccurred(intensity: 0.7)
+                            showingDeleteConfirmation = true
                         }) {
                             Label("Delete", systemImage: "trash")
                         }
@@ -137,6 +178,59 @@ struct CollectionItemDetailView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingShareSheet) {
+            createShareSheet()
+        }
+        .alert(isPresented: $showingDeleteConfirmation) {
+            Alert(
+                title: Text("Delete \(rock.name)?"),
+                message: Text("This will permanently remove this item from your collection."),
+                primaryButton: .destructive(Text("Delete")) {
+                    // Delete the rock
+                    notificationGenerator.notificationOccurred(.success)
+                    collectionManager.removeRock(withID: rock.id)
+                    
+                    // Navigate back (this will be handled by NavigationLink)
+                },
+                secondaryButton: .cancel()
+            )
+        }
+    }
+    
+    // Create a share sheet with rock information
+    private func createShareSheet() -> ShareSheet {
+        var items: [Any] = [
+            "Check out this \(rock.name) I identified with Rock Identifier!"
+        ]
+        
+        // Add image if available
+        if let image = rock.image {
+            items.append(image)
+        }
+        
+        // Add detailed information
+        var detailText = "Name: \(rock.name)\n"
+        detailText += "Category: \(rock.category)\n"
+        
+        // Add physical properties
+        detailText += "Color: \(rock.physicalProperties.color)\n"
+        detailText += "Hardness: \(rock.physicalProperties.hardness)\n"
+        detailText += "Luster: \(rock.physicalProperties.luster)\n"
+        
+        // Add location if available
+        if let location = rock.location, !location.isEmpty {
+            detailText += "Found at: \(location)\n"
+        }
+        
+        items.append(detailText)
+        
+        return ShareSheet(items: items)
+    }
+    
+    // Share the rock information
+    private func shareRock() {
+        impactGenerator.impactOccurred(intensity: 0.6)
+        showingShareSheet = true
     }
 }
 

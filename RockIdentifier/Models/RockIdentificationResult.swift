@@ -18,6 +18,7 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
     let uses: Uses
     var isFavorite: Bool
     var notes: String?
+    var location: String?
     
     // Computed property for thumbnail generation
     var thumbnail: UIImage? {
@@ -48,6 +49,7 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
         case uses
         case isFavorite
         case notes
+        case location
     }
     
     init(
@@ -61,7 +63,8 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
         formation: Formation,
         uses: Uses,
         isFavorite: Bool = false,
-        notes: String? = nil
+        notes: String? = nil,
+        location: String? = nil
     ) {
         self.id = id
         self.image = image
@@ -75,6 +78,7 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
         self.uses = uses
         self.isFavorite = isFavorite
         self.notes = notes
+        self.location = location
     }
     
     init(from decoder: Decoder) throws {
@@ -90,6 +94,7 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
         uses = try container.decode(Uses.self, forKey: .uses)
         isFavorite = try container.decode(Bool.self, forKey: .isFavorite)
         notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        location = try container.decodeIfPresent(String.self, forKey: .location)
         
         if let imageData = try container.decodeIfPresent(Data.self, forKey: .imageData) {
             self.image = UIImage(data: imageData)
@@ -111,6 +116,7 @@ struct RockIdentificationResult: Identifiable, Codable, Equatable {
         try container.encode(uses, forKey: .uses)
         try container.encode(isFavorite, forKey: .isFavorite)
         try container.encodeIfPresent(notes, forKey: .notes)
+        try container.encodeIfPresent(location, forKey: .location)
         
         if let image = image, let imageData = image.jpegData(compressionQuality: 0.7) {
             try container.encode(imageData, forKey: .imageData)

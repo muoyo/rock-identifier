@@ -10,6 +10,13 @@ struct CollectionView: View {
     @State private var showingEmptyState = false
     @State private var isEditMode = false
     @State private var selectedItems = Set<UUID>()
+    @State private var showingExportView = false
+    @State private var showingShareSheet = false
+    @State private var shareItems: [Any] = []
+    
+    // Haptic feedback generators
+    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+    let successGenerator = UINotificationFeedbackGenerator()
     
     private let columns = [
         GridItem(.adaptive(minimum: 160), spacing: 16)
@@ -47,6 +54,7 @@ struct CollectionView: View {
                         if !collectionManager.collection.isEmpty {
                             Button(action: {
                                 isEditMode.toggle()
+                                impactGenerator.impactOccurred()
                                 if !isEditMode {
                                     selectedItems.removeAll()
                                 }
@@ -56,8 +64,20 @@ struct CollectionView: View {
                         }
                         
                         Menu {
-                            Button(action: { isShowingSortOptions = true }) {
+                            Button(action: { 
+                                impactGenerator.impactOccurred()
+                                isShowingSortOptions = true 
+                            }) {
                                 Label("Sort", systemImage: "arrow.up.arrow.down")
+                            }
+                            
+                            Divider()
+                            
+                            Button(action: {
+                                impactGenerator.impactOccurred()
+                                showingExportView = true
+                            }) {
+                                Label("Export Collection", systemImage: "square.and.arrow.up")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
@@ -88,6 +108,13 @@ struct CollectionView: View {
         .onChange(of: collectionManager.searchText) { _ in
             checkEmptyState()
         }
+        .sheet(isPresented: $showingExportView) {
+            CollectionExportView()
+                .environmentObject(collectionManager)
+        }
+        .sheet(isPresented: $showingShareSheet) {
+            ShareSheet(items: shareItems)
+        }
     }
     
     // Filter tabs at the top
@@ -97,6 +124,7 @@ struct CollectionView: View {
                 ForEach(CollectionFilter.allCases, id: \.self) { filter in
                     Button(action: {
                         collectionManager.selectedFilter = filter
+                        impactGenerator.impactOccurred(intensity: 0.5)
                     }) {
                         Text(filter.rawValue)
                             .padding(.vertical, 8)
@@ -221,6 +249,15 @@ struct CollectionView: View {
                         .frame(width: 44, height: 44)
                 }
                 
+                // Share button
+                Button(action: {
+                    shareSelectedItems()
+                }) {
+                    Image(systemName: "square.and.arrow.up")
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                }
+                
                 // Delete button
                 Button(action: {
                     deleteSelectedItems()
@@ -254,17 +291,49 @@ struct CollectionView: View {
     
     // Toggle favorite status for all selected items
     private func toggleFavoriteForSelectedItems() {
+        impactGenerator.impactOccurred(intensity: 0.7)
         for id in selectedItems {
             collectionManager.toggleFavorite(for: id)
         }
+        successGenerator.notificationOccurred(.success)
     }
     
     // Delete all selected items
     private func deleteSelectedItems() {
+        impactGenerator.impactOccurred(intensity: 0.9)
         for id in selectedItems {
             collectionManager.removeRock(withID: id)
         }
         selectedItems.removeAll()
+        successGenerator.notificationOccurred(.success)
+    }
+    
+    // Share selected items
+    private func shareSelectedItems() {
+        impactGenerator.impactOccurred(intensity: 0.6)
+        
+        // Create share items
+        shareItems = []
+        
+        // Add a text summary
+        let selectedRocks = selectedItems.compactMap { id in
+            collectionManager.getRock(by: id)
+        }
+        
+        if selectedRocks.isEmpty { return }
+        
+        // Add text description
+        shareItems.append("\(selectedRocks.count) rocks from my Rock Identifier collection:\n\n\(selectedRocks.map { "• \($0.name) (\($0.category))" }.joined(separator: "\n"))")
+        
+        // Add images if available (limit to first 5 for performance)
+        for rock in selectedRocks.prefix(5) {
+            if let image = rock.image {
+                shareItems.append(image)
+            }
+        }
+        
+        // Show share sheet
+        showingShareSheet = true
     }
 }
 

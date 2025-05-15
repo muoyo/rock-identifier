@@ -13,6 +13,10 @@ struct CollectionItemCard: View {
     @EnvironmentObject var collectionManager: CollectionManager
     @State private var showingDeleteConfirmation = false
     
+    // Haptic feedback generators
+    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
+    let selectionGenerator = UISelectionFeedbackGenerator()
+    
     var body: some View {
         NavigationLink(destination: CollectionItemDetailView(rock: rock)) {
             ZStack {
@@ -95,6 +99,9 @@ struct CollectionItemCard: View {
                         }
                     }
                     .onTapGesture {
+                        // Provide haptic feedback
+                        selectionGenerator.selectionChanged()
+                        
                         onToggleSelect()
                     }
                 }
@@ -102,6 +109,7 @@ struct CollectionItemCard: View {
             .frame(width: 150, height: 200)
             .contextMenu {
                 Button(action: {
+                    impactGenerator.impactOccurred()
                     collectionManager.toggleFavorite(for: rock.id)
                 }) {
                     Label(
@@ -111,6 +119,7 @@ struct CollectionItemCard: View {
                 }
                 
                 Button(action: {
+                    impactGenerator.impactOccurred()
                     showingDeleteConfirmation = true
                 }) {
                     Label("Delete", systemImage: "trash")
@@ -121,6 +130,7 @@ struct CollectionItemCard: View {
                     title: Text("Delete \(rock.name)?"),
                     message: Text("This action cannot be undone."),
                     primaryButton: .destructive(Text("Delete")) {
+                        impactGenerator.impactOccurred(intensity: 0.8)
                         collectionManager.removeRock(withID: rock.id)
                     },
                     secondaryButton: .cancel()

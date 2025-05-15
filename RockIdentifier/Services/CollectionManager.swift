@@ -175,6 +175,17 @@ class CollectionManager: ObservableObject {
     func getRock(by id: UUID) -> RockIdentificationResult? {
         return collection.first { $0.id == id }
     }
+    
+    // Update location for a rock
+    func updateLocation(for rockID: UUID, location: String) {
+        if let index = collection.firstIndex(where: { $0.id == rockID }) {
+            var updatedCollection = collection
+            updatedCollection[index].location = location
+            collection = updatedCollection
+            
+            saveCollection()
+        }
+    }
 }
 
 enum CollectionFilter: String, CaseIterable {
