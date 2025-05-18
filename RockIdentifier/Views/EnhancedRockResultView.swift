@@ -229,7 +229,7 @@ struct EnhancedRockResultView: View {
                                         
                                         Rectangle()
                                             .fill(Color.blue)
-                                            .frame(width: geometry.size.width / 4 - 10, height: 3)
+                                            .frame(width: max(5, geometry.size.width / 4 - 10), height: 3)
                                             .offset(x: CGFloat(selectedTab) * (geometry.size.width / 4))
                                             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
                                     }
@@ -651,7 +651,7 @@ struct EnhancedPhysicalPropertiesView: View {
                 EnhancedPropertyRow(
                     label: "Luster",
                     value: properties.luster,
-                    iconName: "sunrays",
+                    iconName: "sparkles",
                     showDivider: true
                 )
                 
