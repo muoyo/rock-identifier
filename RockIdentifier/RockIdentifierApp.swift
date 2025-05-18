@@ -15,16 +15,8 @@ struct RockIdentifierApp: App {
     @StateObject private var subscriptionManager = SubscriptionManager()
     
     init() {
-        // Configure RevenueCat with your API key
-        Purchases.configure(
-            withAPIKey: RevenueCatConfig.apiKey,
-            appUserID: nil // Let RevenueCat generate a user ID
-        )
-        
-        // Enable debug logging in development
-        if RevenueCatConfig.debugLogs {
-            Purchases.logLevel = .debug
-        }
+        // Configure RevenueCat with enhanced settings
+        RevenueCatConfig.configure()
     }
     
     var body: some Scene {

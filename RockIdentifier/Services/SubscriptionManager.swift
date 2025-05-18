@@ -7,17 +7,33 @@ import Combine
 import StoreKit
 import RevenueCat
 
+/// Enhanced SubscriptionManager with full RevenueCat integration
 class SubscriptionManager: NSObject, ObservableObject {
+    // MARK: - Published Properties
+    
+    /// Current subscription status
     @Published var status: SubscriptionStatus
+    
+    /// Loading state for purchase operations
     @Published var isLoading: Bool = false
-    @Published var developerMode: Bool = false // In-memory only, resets on app restart
+    
+    /// Developer mode flag (in-memory only, resets on app restart)
+    @Published var developerMode: Bool = false
+    
+    /// Error message from the last operation
+    @Published var lastErrorMessage: String?
+    
+    // MARK: - Private Properties
     
     private let defaults = UserDefaults.standard
     private let statusKey = "subscriptionStatus"
+    private let customerIDKey = "revenueCatCustomerID"
     private var cancellables = Set<AnyCancellable>()
     
     // Identification counter for free tier usage
     let identificationCounter = IdentificationCounter()
+    
+    // MARK: - Initialization
     
     override init() {
         // Load saved status or use default
@@ -38,16 +54,37 @@ class SubscriptionManager: NSObject, ObservableObject {
         setupPurchasesListener()
     }
     
+    // MARK: - RevenueCat Setup
+    
     private func setupPurchasesListener() {
-        // Listen for changes in purchase status
+        // Set delegate to receive updates
         Purchases.shared.delegate = self
         
-        // Check current subscription status
+        // Restore custom user ID if available
+        if let storedID = defaults.string(forKey: customerIDKey) {
+            Purchases.shared.logIn(storedID) { (customerInfo, created, error) in
+                if let error = error {
+                    print("Error logging in with stored ID: \(error.localizedDescription)")
+                    return
+                }
+                
+                // Update subscription status with the restored customer info
+                self.updateSubscriptionStatus(with: customerInfo)
+            }
+        }
+        
+        // Check current subscription status regardless of stored ID
+        refreshSubscriptionStatus()
+    }
+    
+    /// Refreshes subscription status from RevenueCat
+    func refreshSubscriptionStatus() {
         Purchases.shared.getCustomerInfo { [weak self] (customerInfo, error) in
             guard let self = self else { return }
             
             if let error = error {
                 print("Error fetching customer info: \(error.localizedDescription)")
+                self.lastErrorMessage = "Could not update subscription status: \(error.localizedDescription)"
                 return
             }
             
@@ -58,6 +95,10 @@ class SubscriptionManager: NSObject, ObservableObject {
     
     private func updateSubscriptionStatus(with customerInfo: CustomerInfo?) {
         guard let customerInfo = customerInfo else { return }
+        
+        // Store customer ID for restoration
+        let appUserID = Purchases.shared.appUserID
+        defaults.set(appUserID, forKey: customerIDKey)
         
         // Check if user has active entitlement
         let hasActiveEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.premiumEntitlementID)
@@ -91,17 +132,24 @@ class SubscriptionManager: NSObject, ObservableObject {
         }
         
         // Update the subscription status
-        self.status = SubscriptionStatus(
-            plan: plan,
-            expirationDate: expirationDate,
-            isInTrial: isInTrial,
-            trialEndDate: trialEndDate
-        )
-        
-        self.saveStatus()
+        DispatchQueue.main.async {
+            self.status = SubscriptionStatus(
+                plan: plan,
+                expirationDate: expirationDate,
+                isInTrial: isInTrial,
+                trialEndDate: trialEndDate
+            )
+            
+            // Save the updated status
+            self.saveStatus()
+        }
     }
     
-    // Checks if the user has access to a specific premium feature
+    // MARK: - Feature Access Control
+    
+    /// Checks if the user has access to a specific premium feature
+    /// - Parameter feature: The premium feature to check access for
+    /// - Returns: Boolean indicating if the user can access the feature
     func canAccess(feature: PremiumFeature) -> Bool {
         // If user has an active premium subscription, they can access all features
         if status.isActive {
@@ -146,23 +194,36 @@ class SubscriptionManager: NSObject, ObservableObject {
     
     // MARK: - Purchase Methods
     
-    // Initiate a purchase
-    func purchase(plan: SubscriptionPlan, isTrialEnabled: Bool = false) {
+    /// Initiates a subscription purchase
+    /// - Parameters:
+    ///   - plan: The subscription plan to purchase
+    ///   - isTrialEnabled: Whether to use the trial version of the plan if available
+    ///   - completion: Optional callback with success/error information
+    func purchase(plan: SubscriptionPlan, isTrialEnabled: Bool = false, completion: ((Bool, Error?) -> Void)? = nil) {
         isLoading = true
+        lastErrorMessage = nil
         
         // Make sure we have a valid product ID
         guard !plan.productIdentifier.isEmpty else {
             isLoading = false
+            let error = NSError(domain: "com.appmagic.rockidentifier", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Invalid product identifier"])
+            lastErrorMessage = "Invalid product identifier"
+            completion?(false, error)
             return
         }
         
         // First, get the available packages
         Purchases.shared.getOfferings { [weak self] (offerings, error) in
-            guard let self = self else { return }
+            guard let self = self else {
+                completion?(false, error)
+                return
+            }
             
             if let error = error {
                 print("Error fetching offerings: \(error.localizedDescription)")
                 self.isLoading = false
+                self.lastErrorMessage = "Could not load subscription options: \(error.localizedDescription)"
+                completion?(false, error)
                 return
             }
             
@@ -170,6 +231,9 @@ class SubscriptionManager: NSObject, ObservableObject {
             guard let offerings = offerings else {
                 print("No offerings available")
                 self.isLoading = false
+                let noOfferingsError = NSError(domain: "com.appmagic.rockidentifier", code: 1002, userInfo: [NSLocalizedDescriptionKey: "No subscription options available"])
+                self.lastErrorMessage = "No subscription options available"
+                completion?(false, noOfferingsError)
                 return
             }
             
@@ -177,6 +241,9 @@ class SubscriptionManager: NSObject, ObservableObject {
             guard let offering = offerings.current else {
                 print("No current offering available")
                 self.isLoading = false
+                let noCurrentOfferingError = NSError(domain: "com.appmagic.rockidentifier", code: 1003, userInfo: [NSLocalizedDescriptionKey: "No subscription options available for your region"])
+                self.lastErrorMessage = "No subscription options available for your region"
+                completion?(false, noCurrentOfferingError)
                 return
             }
             
@@ -194,50 +261,95 @@ class SubscriptionManager: NSObject, ObservableObject {
             guard let package = packageToPurchase else {
                 print("Could not find package for product ID: \(plan.productIdentifier)")
                 self.isLoading = false
+                let noPackageError = NSError(domain: "com.appmagic.rockidentifier", code: 1004, userInfo: [NSLocalizedDescriptionKey: "Subscription option not available"])
+                self.lastErrorMessage = "Subscription option not available"
+                completion?(false, noPackageError)
                 return
             }
             
             // Purchase the package
             Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if userCancelled {
+                        print("User cancelled purchase")
+                        let cancelledError = NSError(domain: "com.appmagic.rockidentifier", code: 1005, userInfo: [NSLocalizedDescriptionKey: "Purchase cancelled"])
+                        self.lastErrorMessage = nil // Don't show error for user cancellation
+                        completion?(false, cancelledError)
+                        return
+                    }
+                    
+                    if let error = error {
+                        print("Purchase error: \(error.localizedDescription)")
+                        self.lastErrorMessage = "Purchase failed: \(error.localizedDescription)"
+                        completion?(false, error)
+                        return
+                    }
+                    
+                    // Update subscription status
+                    self.updateSubscriptionStatus(with: customerInfo)
+                    
+                    // Verify purchase success by checking if status is now active
+                    let purchaseSucceeded = self.status.isActive
+                    if !purchaseSucceeded {
+                        // This should rarely happen, but just in case
+                        let verificationError = NSError(domain: "com.appmagic.rockidentifier", code: 1006, userInfo: [NSLocalizedDescriptionKey: "Subscription verification failed"])
+                        self.lastErrorMessage = "Subscription verification failed. Please try restoring purchases."
+                        completion?(false, verificationError)
+                        return
+                    }
+                    
+                    // Success!
+                    completion?(true, nil)
+                }
+            }
+        }
+    }
+    
+    /// Restores previously purchased subscriptions
+    /// - Parameter completion: Optional callback with success/error information
+    func restorePurchases(completion: ((Bool, Error?) -> Void)? = nil) {
+        isLoading = true
+        lastErrorMessage = nil
+        
+        Purchases.shared.restorePurchases { [weak self] (customerInfo, error) in
+            guard let self = self else {
+                completion?(false, error)
+                return
+            }
+            
+            DispatchQueue.main.async {
                 self.isLoading = false
                 
                 if let error = error {
-                    print("Purchase error: \(error.localizedDescription)")
-                    return
-                }
-                
-                if userCancelled {
-                    print("User cancelled purchase")
+                    print("Restore error: \(error.localizedDescription)")
+                    self.lastErrorMessage = "Restore failed: \(error.localizedDescription)"
+                    completion?(false, error)
                     return
                 }
                 
                 // Update subscription status
                 self.updateSubscriptionStatus(with: customerInfo)
+                
+                // Check if restoration resulted in an active subscription
+                let restoreSucceeded = self.status.isActive
+                if !restoreSucceeded {
+                    // User attempted to restore, but has no purchases
+                    // This is not an error, just an information message
+                    self.lastErrorMessage = "No active subscriptions found for your account"
+                }
+                
+                // Return true even if no active subscriptions were found
+                // The operation itself succeeded, even if it didn't find anything
+                completion?(true, nil)
             }
-        }
-    }
-    
-    // Restore purchases
-    func restorePurchases() {
-        isLoading = true
-        
-        Purchases.shared.restorePurchases { [weak self] (customerInfo, error) in
-            guard let self = self else { return }
-            self.isLoading = false
-            
-            if let error = error {
-                print("Restore error: \(error.localizedDescription)")
-                return
-            }
-            
-            // Update subscription status
-            self.updateSubscriptionStatus(with: customerInfo)
         }
     }
     
     // MARK: - For Development/Testing
     
-    // Reset subscription status to free (for testing)
+    /// Resets subscription status to free (for testing)
     func resetToFree() {
         status = SubscriptionStatus(plan: .free)
         saveStatus()
@@ -247,7 +359,8 @@ class SubscriptionManager: NSObject, ObservableObject {
         // This ensures they still have their 3 total limit
     }
     
-    // Set a mock premium subscription (for testing)
+    /// Sets a mock premium subscription (for testing)
+    /// - Parameter plan: The subscription plan to mock
     func setMockPremium(plan: SubscriptionPlan = .yearly) {
         let expirationDate = Date().addingTimeInterval(365 * 24 * 60 * 60)
         status = SubscriptionStatus(plan: plan, expirationDate: expirationDate)
@@ -255,8 +368,6 @@ class SubscriptionManager: NSObject, ObservableObject {
         // Signal that object has changed for UI updates
         objectWillChange.send()
     }
-    
-    // MARK: - Developer Mode Methods
     
     /// Toggles developer mode on/off
     func toggleDeveloperMode() {
@@ -271,5 +382,10 @@ extension SubscriptionManager: PurchasesDelegate {
     func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
         // Update subscription status when we receive updates from RevenueCat
         updateSubscriptionStatus(with: customerInfo)
+    }
+    
+    // Handle other delegate methods as needed
+    func purchases(_ purchases: Purchases, receivedUpdate purchaserInfo: CustomerInfo) {
+        updateSubscriptionStatus(with: purchaserInfo)
     }
 }

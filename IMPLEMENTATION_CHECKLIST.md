@@ -70,7 +70,6 @@
 - [x] Implement unit tests for core functionality
 
 ## Phase 2: UI Implementation - Main Screens
-⏳ **Up Next**
 
 - [x] **Splash & Onboarding**
   - [x] Create splash screen (add delight through simple animation)
@@ -104,7 +103,6 @@
   - [x] Implement confidence indicator
 
 ## Phase 3: Collection Management
-⏳ **Up Next**
 
 - [x] **Collection Data Model Refinement**
   - [x] Review and enhance the existing `CollectionManager` class
@@ -232,7 +230,6 @@
   - [x] Add performance monitoring
 
 ## Phase 4: Paywall & Monetization
-🔄 **Planned**
 
 - [x] **Paywall Design**
   - [x] Create primary paywall screen with 3-day trial + weekly plan option
@@ -241,12 +238,12 @@
   - [x] Implement feature comparison section
   - [x] Add "Continue with Limited Version" option (link should appear after 5-seconds using appropriate animation)
 
-- [ ] **Subscription Management**
-  - [ ] Connect to RevenueCat for in-app purchases
-  - [ ] Implement subscription tracking
-  - [ ] Create restore purchases functionality
-  - [ ] Add receipt validation
-  - [ ] Implement subscription status persistence
+- [x] **Subscription Management**
+  - [x] Connect to RevenueCat for in-app purchases
+  - [x] Implement subscription tracking
+  - [x] Create restore purchases functionality
+  - [x] Add receipt validation
+  - [x] Implement subscription status persistence
 
 - [ ] **Free Tier Limitations**
   - [ ] Track free identification count
@@ -255,8 +252,7 @@
   - [ ] Implement trial expiration handling
   - [ ] Create premium feature gates
 
-## Phase 5: Error Handling & Reliability
-🔄 **Planned**
+## Phase 5: Error Handling & Reliability (not critical for MVP)
 
 - [ ] **Error Detection**
   - [ ] Implement image quality assessment
@@ -279,8 +275,7 @@
   - [ ] Implement multiple angle suggestion for difficult cases
   - [ ] Create report misidentification feature
 
-## Phase 6: Performance Optimization
-🔄 **Planned**
+## Phase 6: Performance Optimization (not critical for MVP)
 
 - [ ] **Image Processing**
   - [ ] Optimize image resizing for API
@@ -303,7 +298,6 @@
   - [ ] Optimize transitions and effects
 
 ## Phase 7: Polish & Launch Preparation
-🔄 **Planned**
 
 - [ ] **Visual Polish**
   - [ ] Refine animations and transitions
@@ -334,7 +328,6 @@
   - [ ] Complete App Store Connect information
 
 ## Phase 8: Testing & Launch
-🔄 **Planned**
 
 - [ ] **User Testing**
   - [ ] Conduct moderated testing sessions
@@ -365,7 +358,6 @@
   - [ ] Begin post-launch marketing
 
 ## Post-Launch Roadmap
-🔄 **Planned**
 
 - [ ] **Stabilization**
   - [ ] Monitor and fix any reported issues

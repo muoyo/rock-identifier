@@ -3,6 +3,7 @@
 //
 
 import Foundation
+import RevenueCat
 
 struct RevenueCatConfig {
     // API keys
@@ -21,4 +22,28 @@ struct RevenueCatConfig {
     
     // Configuration
     static let debugLogs = true  // Set to false for production
+    
+    // Configure RevenueCat with application settings
+    static func configure() {
+        // Set up RevenueCat configuration
+        let configuration = Configuration.builder(withAPIKey: apiKey)
+            .with(apiKey: apiKey)
+            .with(appUserID: nil) // Let RevenueCat generate a user ID
+            // .with(purchasesAreCompletedBy: PurchasesAreCompletedBy, storeKitVersion: StoreKitVersion(rawValue: 2)!) // Not using observer mode - we want to handle transactions
+            .with(usesStoreKit2IfAvailable: true) // Use StoreKit 2 if available for improved reliability
+            .with(networkTimeout: 60) // Longer timeout for slower connections
+            .with(storeKit1Timeout: 60) // Longer timeout for StoreKit 1
+            .with(dangerousSettings: DangerousSettings(autoSyncPurchases: true)) // Auto-sync purchases for better reliability
+            .build()
+        
+        // Configure with the builder
+        Purchases.configure(with: configuration)
+        
+        // Set up logging level
+        if debugLogs {
+            Purchases.logLevel = .debug
+        } else {
+            Purchases.logLevel = .error  // Only log errors in production
+        }
+    }
 }

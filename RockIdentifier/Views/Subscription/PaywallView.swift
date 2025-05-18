@@ -515,18 +515,45 @@ struct PaywallView: View {
         // Show loading indicator
         isLoading = true
         
-        // Initiate purchase with appropriate handler
-        subscriptionManager.purchase(plan: selectedPlan, isTrialEnabled: trialEnabled)
-        
-        // Mock success for now (in production, this would be handled by a callback)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.isLoading = false
-            
-            // For demo/testing - uncomment to simulate successful purchase
-            if subscriptionManager.developerMode {
-                subscriptionManager.setMockPremium(plan: selectedPlan)
-                self.showSuccessMessage = true
+        // Initiate purchase with completion handler
+        subscriptionManager.purchase(plan: selectedPlan, isTrialEnabled: trialEnabled) { success, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if success {
+                    // Purchase successful
+                    self.showSuccessMessage = true
+                } else if let error = error {
+                    // For user cancellations, don't show error message
+                    if let nsError = error as NSError?, nsError.code == 1005 {  // User cancelled
+                        // Do nothing, user cancelled
+                    } else {
+                        // Show error message for other errors
+                        self.showErrorAlert(message: error.localizedDescription)
+                    }
+                }
             }
+        }
+    }
+    
+    // Show an error alert with the provided message
+    private func showErrorAlert(message: String) {
+        let alert = UIAlertController(
+            title: "Purchase Failed",
+            message: message,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Try Again", style: .default, handler: { _ in
+            self.purchaseSubscription()
+        }))
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        
+        // Present the alert
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(alert, animated: true)
         }
     }
     
@@ -539,18 +566,39 @@ struct PaywallView: View {
         // Show loading indicator
         isLoading = true
         
-        // Call restore function
-        subscriptionManager.restorePurchases()
-        
-        // Mock success for now (in production, this would be handled by a callback)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            self.isLoading = false
-            
-            // For demo/testing - uncomment to simulate successful restore
-            if subscriptionManager.developerMode {
-                subscriptionManager.setMockPremium()
-                self.showSuccessMessage = true
+        // Call restore function with completion handler
+        subscriptionManager.restorePurchases { success, error in
+            DispatchQueue.main.async {
+                self.isLoading = false
+                
+                if success && subscriptionManager.status.isActive {
+                    // Show success message if subscription is active
+                    self.showSuccessMessage = true
+                } else if let error = error {
+                    // Show error alert
+                    self.showRestoreErrorAlert(message: error.localizedDescription)
+                } else if success && !subscriptionManager.status.isActive {
+                    // No active subscriptions found
+                    self.showRestoreErrorAlert(message: "No active subscriptions found. If you previously purchased a subscription, make sure you're signed in with the correct Apple ID.")
+                }
             }
+        }
+    }
+    
+    // Show a restore error alert
+    private func showRestoreErrorAlert(message: String) {
+        let alert = UIAlertController(
+            title: "Restore Result",
+            message: message,
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .default))
+        
+        // Present the alert
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(alert, animated: true)
         }
     }
     
