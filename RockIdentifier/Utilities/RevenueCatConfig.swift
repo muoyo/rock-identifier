@@ -7,9 +7,9 @@ import Foundation
 struct RevenueCatConfig {
     // API keys
     #if DEBUG
-    static let apiKey = "appl_YOUR_DEBUG_API_KEY" // Replace with your actual Debug API key
+    static let apiKey = "appl_vlfrSylKwVKeuFWbeAiQwHNeVua" // Replace with your actual Debug API key
     #else
-    static let apiKey = "appl_YOUR_PRODUCTION_API_KEY" // Replace with your actual Production API key
+    static let apiKey = "appl_vlfrSylKwVKeuFWbeAiQwHNeVua" // Replace with your actual Production API key
     #endif
     
     // Product identifiers

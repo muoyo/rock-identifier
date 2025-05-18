@@ -10,6 +10,7 @@ import RevenueCat
 class SubscriptionManager: NSObject, ObservableObject {
     @Published var status: SubscriptionStatus
     @Published var isLoading: Bool = false
+    @Published var developerMode: Bool = false // In-memory only, resets on app restart
     
     private let defaults = UserDefaults.standard
     private let statusKey = "subscriptionStatus"
@@ -26,6 +27,9 @@ class SubscriptionManager: NSObject, ObservableObject {
         } else {
             self.status = SubscriptionStatus(plan: .free)
         }
+        
+        // Developer mode always starts as false on app launch
+        self.developerMode = false
         
         // Must call super.init() before using self in a subclass of NSObject
         super.init()
@@ -113,12 +117,12 @@ class SubscriptionManager: NSObject, ObservableObject {
         }
     }
     
-    // Returns remaining identifications for today (for free tier users)
+    // Returns remaining identifications total (for free tier users)
     var remainingIdentifications: Int {
         if status.isActive {
             return Int.max // Unlimited for premium users
         }
-        return identificationCounter.remainingToday
+        return identificationCounter.remainingTotal
     }
     
     // Increment identification counter and check if reached limit
@@ -126,7 +130,11 @@ class SubscriptionManager: NSObject, ObservableObject {
         if status.isActive {
             return true // Premium users always succeed
         }
-        return identificationCounter.increment()
+        
+        let result = identificationCounter.increment()
+        // Signal that object has changed for UI updates
+        objectWillChange.send()
+        return result
     }
     
     // Save subscription status to UserDefaults
@@ -233,6 +241,10 @@ class SubscriptionManager: NSObject, ObservableObject {
     func resetToFree() {
         status = SubscriptionStatus(plan: .free)
         saveStatus()
+        // Signal that object has changed for UI updates
+        objectWillChange.send()
+        // Don't reset identification counter when a user downgrades
+        // This ensures they still have their 3 total limit
     }
     
     // Set a mock premium subscription (for testing)
@@ -240,6 +252,17 @@ class SubscriptionManager: NSObject, ObservableObject {
         let expirationDate = Date().addingTimeInterval(365 * 24 * 60 * 60)
         status = SubscriptionStatus(plan: plan, expirationDate: expirationDate)
         saveStatus()
+        // Signal that object has changed for UI updates
+        objectWillChange.send()
+    }
+    
+    // MARK: - Developer Mode Methods
+    
+    /// Toggles developer mode on/off
+    func toggleDeveloperMode() {
+        developerMode = !developerMode
+        print("Developer mode: \(developerMode ? "ENABLED" : "DISABLED")")
+        objectWillChange.send()
     }
 }
 

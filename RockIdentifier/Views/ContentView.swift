@@ -16,6 +16,9 @@ struct ContentView: View {
     // Rock identification service
     @StateObject private var identificationService = RockIdentificationService()
     
+    // Subscription manager
+    @EnvironmentObject private var subscriptionManager: SubscriptionManager
+    
     // Collection manager
     @StateObject private var collectionManager = CollectionManager()
     
@@ -23,13 +26,29 @@ struct ContentView: View {
     @State private var showResultView: Bool = false
     
     // Current user tier - would be managed by subscription service
-    @State private var userTier: UserTier = .free
+    // Using subscription service for tier information
     
-    // Remaining identifications count
-    @State private var remainingIdentifications: Int = 3 // For free tier
+    // Using subscription manager for remaining identifications count
     
     // Processing view state
     @State private var showProcessingView: Bool = false
+    
+    // Developer settings sheet
+    @State private var showDeveloperSettings: Bool = false
+    
+    // Initialize notification observer for developer mode toggle
+    init() {
+        // Set up notification observer for developer mode toggle
+        NotificationCenter.default.addObserver(
+            forName: NSNotification.Name("ToggleDeveloperMode"),
+            object: nil,
+            queue: .main
+        ) { _ in
+            // Toggle developer mode
+            // We can't use a capture list here because this is initialized before the EnvironmentObject
+            // The toggle will be handled in the .onReceive view modifier instead
+        }
+    }
     
     var body: some View {
         ZStack(alignment: .top) {
@@ -39,12 +58,19 @@ struct ContentView: View {
                 onCaptureImage: { image in
                     // When an image is captured, process it
                     withAnimation {
-                        showProcessingView = true
+                        // Only show processing view if we have identifications left
+                        if subscriptionManager.status.isActive || subscriptionManager.remainingIdentifications > 0 {
+                            showProcessingView = true
+                            processImage(image)
+                        } else {
+                            // If no identifications left, don't even show processing view
+                            print("No identifications remaining - not showing processing")
+                            // This would be where we show the paywall instead
+                        }
                     }
-                    processImage(image)
                 },
                 showCollection: $showCollection,
-                remainingIdentifications: remainingIdentifications
+                remainingIdentifications: subscriptionManager.remainingIdentifications
             )
             
             // Processing view overlay
@@ -89,6 +115,13 @@ struct ContentView: View {
                 }
             }
         }
+        // Show developer settings sheet
+        .sheet(isPresented: $showDeveloperSettings) {
+            DeveloperSettingsView(
+                isPresented: $showDeveloperSettings,
+                subscriptionManager: subscriptionManager
+            )
+        }
         // Show error alert if identification fails
         .alert(isPresented: .constant(identificationService.state.errorMessage != nil)) {
             Alert(
@@ -112,11 +145,7 @@ struct ContentView: View {
                     showProcessingView = false
                 }
                 
-                // Reduce remaining identifications for free tier
-                if userTier == .free {
-                    remainingIdentifications -= 1
-                }
-                
+                // Switch to success state
                 // Important: First deactivate camera, then show result view
                 // with a slight delay to allow for proper transitions
                 cameraIsActive = false
@@ -144,14 +173,46 @@ struct ContentView: View {
                 print("Identification service idle")
             }
         }
+        // Handle developer mode toggle notification
+        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ToggleDeveloperMode"))) { _ in
+            // Show developer settings
+            showDeveloperSettings = true
+            
+            // Provide haptic feedback
+            let generator = UINotificationFeedbackGenerator()
+            generator.notificationOccurred(.success)
+        }
     }
     
     // Process the captured image
     private func processImage(_ image: UIImage) {
         // Check if user has identifications remaining
-        if userTier == .free && remainingIdentifications <= 0 {
+        if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
             // Show paywall
             // This would be implemented in Phase 4
+            print("Identification limit reached - showing paywall")
+            
+            // Hide processing view immediately
+            withAnimation {
+                showProcessingView = false
+            }
+            
+            // *** DO NOT PROCEED WITH IDENTIFICATION ***
+            return
+        }
+        
+        // Record the identification (updates counter for free tier)
+        let recordSuccess = subscriptionManager.recordIdentification()
+        if !recordSuccess {
+            // If we couldn't record (reached limit), show paywall
+            print("Identification limit reached - showing paywall")
+            
+            // Hide processing view immediately
+            withAnimation {
+                showProcessingView = false
+            }
+            
+            // *** DO NOT PROCEED WITH IDENTIFICATION ***
             return
         }
         
