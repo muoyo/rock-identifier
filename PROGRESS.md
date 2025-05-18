@@ -90,7 +90,16 @@
 - **Location Tagging** - Add and edit location information for specimens
 
 ## Phase 4: Paywall & Monetization
-⏳ **Up Next**
+🔄 **In Progress**
+
+### Implemented:
+- Created the PaywallView with animated crystal header
+- Implemented plan selection with yearly and weekly + trial options
+- Added timed dismissability for soft paywalls (5-second countdown)
+- Added feature comparison section with benefits list
+- Implemented "Continue with Limited Version" option
+- Added trial toggle with haptic feedback
+- Created smooth transitions and animations
 
 ## Notes:
 - The app follows a freemium model with a hard limit of 3 identifications for free tier users

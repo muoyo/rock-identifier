@@ -10,6 +10,8 @@ struct DeveloperSettingsView: View {
     
     @State private var showActionConfirmation = false
     @State private var lastAction = ""
+    @State private var showPaywall = false
+    @State private var isHardPaywall = false
     
     var body: some View {
         NavigationView {
@@ -21,6 +23,33 @@ struct DeveloperSettingsView: View {
                         Text("Enabled")
                             .foregroundColor(.green)
                             .fontWeight(.medium)
+                    }
+                }
+                Section(header: Text("Paywall Testing")) {
+                    Button(action: {
+                        // Show PaywallView with dismissable paywall
+                        isHardPaywall = false
+                        showPaywall = true
+                    }) {
+                        HStack {
+                            Text("Show Paywall")
+                            Spacer()
+                            Image(systemName: "dollarsign.circle")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    
+                    Button(action: {
+                        // Set isDismissable to false to test hard paywall
+                        isHardPaywall = true
+                        showPaywall = true
+                    }) {
+                        HStack {
+                            Text("Show Hard Paywall (Non-dismissable)")
+                            Spacer()
+                            Image(systemName: "lock.circle")
+                                .foregroundColor(.red)
+                        }
                     }
                 }
                 
@@ -117,6 +146,10 @@ struct DeveloperSettingsView: View {
                     message: Text(lastAction),
                     dismissButton: .default(Text("OK"))
                 )
+            }
+            .sheet(isPresented: $showPaywall) {
+                PaywallView(isDismissable: !isHardPaywall)
+                    .environmentObject(subscriptionManager)
             }
         }
     }

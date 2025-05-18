@@ -72,7 +72,7 @@ struct SplashView: View {
                     Spacer()
                     Text("Rock Identifier")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.primary)
+                        .foregroundColor(.black)
                         .padding(.bottom, 70)
                         .transition(.opacity)
                 }
