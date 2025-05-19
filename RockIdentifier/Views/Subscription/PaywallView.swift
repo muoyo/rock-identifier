@@ -16,7 +16,7 @@ struct PaywallView: View {
     
     // Dismissability logic
     @State private var canBeDismissed: Bool = false
-    @State private var secondsUntilDismissable: Int = 5
+    @State private var secondsUntilDismissable: Int = 5 // 5 second timer before dismiss is allowed
     
     // Reference to shared app state
     @ObservedObject private var appState = AppState.shared
@@ -440,7 +440,6 @@ struct PaywallView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title ?? plan.displayName)
                         .font(.headline)
-                        .foregroundColor(.black)
                     
                     HStack {
                         if let originalPrice = originalPrice {

@@ -101,7 +101,7 @@ class SubscriptionManager: NSObject, ObservableObject {
         defaults.set(appUserID, forKey: customerIDKey)
         
         // Check if user has active entitlement
-        let hasActiveEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.premiumEntitlementID)
+        let hasActiveEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess)
         
         // Determine which product they purchased
         var plan: SubscriptionPlan = .free
@@ -111,11 +111,11 @@ class SubscriptionManager: NSObject, ObservableObject {
         
         if hasActiveEntitlement {
             // Get the active subscription
-            if let info = customerInfo.entitlements.active[RevenueCatConfig.premiumEntitlementID] {
+            if let info = customerInfo.entitlements.active[RevenueCatConfig.Identifiers.premiumAccess] {
                 // Check which product they purchased
-                if info.productIdentifier == RevenueCatConfig.weeklyWithTrialID {
+                if info.productIdentifier == RevenueCatConfig.Identifiers.weeklySubscription {
                     plan = .weekly
-                } else if info.productIdentifier == RevenueCatConfig.yearlyID {
+                } else if info.productIdentifier == RevenueCatConfig.Identifiers.yearlySubscription {
                     plan = .yearly
                 }
                 

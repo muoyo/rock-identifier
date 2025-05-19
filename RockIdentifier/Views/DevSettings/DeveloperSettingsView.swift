@@ -32,7 +32,7 @@ struct DeveloperSettingsView: View {
                         showPaywall = true
                     }) {
                         HStack {
-                            Text("Show Paywall")
+                            Text("Show Soft Paywall")
                             Spacer()
                             Image(systemName: "dollarsign.circle")
                                 .foregroundColor(.green)
@@ -45,10 +45,40 @@ struct DeveloperSettingsView: View {
                         showPaywall = true
                     }) {
                         HStack {
-                            Text("Show Hard Paywall (Non-dismissable)")
+                            Text("Show Hard Paywall")
                             Spacer()
                             Image(systemName: "lock.circle")
                                 .foregroundColor(.red)
+                        }
+                    }
+                    
+                    Button(action: {
+                        // Reset version tracking to simulate first launch
+                        PaywallManager.shared.resetVersionForTesting()
+                        PaywallManager.shared.logState()
+                        lastAction = "Version tracking reset!"
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Reset Version Tracking")
+                            Spacer()
+                            Image(systemName: "arrow.triangle.2.circlepath.circle")
+                                .foregroundColor(.purple)
+                        }
+                    }
+                    
+                    Button(action: {
+                        // Show hard paywall if needed
+                        let shown = PaywallManager.shared.showHardPaywallIfNeeded()
+                        PaywallManager.shared.logState()
+                        lastAction = shown ? "Hard paywall shown!" : "Hard paywall not shown (already shown for this version)"
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Trigger Hard Paywall Check")
+                            Spacer()
+                            Image(systemName: "exclamationmark.shield.fill")
+                                .foregroundColor(.orange)
                         }
                     }
                 }

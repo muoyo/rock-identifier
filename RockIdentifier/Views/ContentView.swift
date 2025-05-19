@@ -64,8 +64,11 @@ struct ContentView: View {
                             processImage(image)
                         } else {
                             // If no identifications left, don't even show processing view
-                            print("No identifications remaining - not showing processing")
-                            // This would be where we show the paywall instead
+                            print("No identifications remaining - showing paywall instead")
+                            // Show the paywall
+                            if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
+                                PaywallManager.shared.showSoftPaywall()
+                            }
                         }
                     }
                 },
@@ -150,6 +153,10 @@ struct ContentView: View {
                 // with a slight delay to allow for proper transitions
                 cameraIsActive = false
                 
+                // Notify FreeTierManager of successful identification
+                // This might trigger a soft paywall based on remaining identifications
+                FreeTierManager.shared.handleSuccessfulIdentification()
+                
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     print("Showing result view")
                     showResultView = true
@@ -188,17 +195,22 @@ struct ContentView: View {
     private func processImage(_ image: UIImage) {
         // Check if user has identifications remaining
         if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
-            // Show paywall
-            // This would be implemented in Phase 4
-            print("Identification limit reached - showing paywall")
-            
-            // Hide processing view immediately
-            withAnimation {
-                showProcessingView = false
+            // Use FreeTierManager to handle this case - it will show the paywall if needed
+            if !FreeTierManager.shared.checkAndHandleIdentificationAttempt() {
+                // Show paywall
+                print("Identification limit reached - showing paywall")
+                
+                // Hide processing view immediately
+                withAnimation {
+                    showProcessingView = false
+                }
+                
+                // Show soft paywall
+                PaywallManager.shared.showSoftPaywall()
+                
+                // *** DO NOT PROCEED WITH IDENTIFICATION ***
+                return
             }
-            
-            // *** DO NOT PROCEED WITH IDENTIFICATION ***
-            return
         }
         
         // Record the identification (updates counter for free tier)
@@ -211,6 +223,9 @@ struct ContentView: View {
             withAnimation {
                 showProcessingView = false
             }
+            
+            // Show soft paywall
+            PaywallManager.shared.showSoftPaywall()
             
             // *** DO NOT PROCEED WITH IDENTIFICATION ***
             return

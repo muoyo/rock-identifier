@@ -271,6 +271,19 @@ struct CameraView: View {
                             }
                         }
                         .buttonStyle(CaptureButtonStyle())
+                        // Visually indicate when no identifications remain
+                        .opacity(remainingIdentifications > 0 ? 1.0 : 0.5)
+                        .overlay(
+                            remainingIdentifications <= 0 ? 
+                                Image(systemName: "lock.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(.white)
+                                    .padding(8)
+                                    .background(Color.red.opacity(0.7))
+                                    .clipShape(Circle())
+                                    .position(x: 60, y: 20)
+                                : nil
+                        )
                         
                         Spacer()
                         

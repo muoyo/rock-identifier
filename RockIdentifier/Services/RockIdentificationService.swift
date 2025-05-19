@@ -114,6 +114,13 @@ class RockIdentificationService: ObservableObject {
     
     // Function to identify a rock from an image
     func identifyRock(from image: UIImage) {
+        // Check free tier limits first
+        if !FreeTierManager.shared.checkAndHandleIdentificationAttempt() {
+            // Identification limit reached, show paywall
+            state = .error("You've reached your free identification limit. Subscribe to unlock unlimited identifications.")
+            return
+        }
+        
         state = .processing
         currentImage = image // Store the current image
         
@@ -736,6 +743,12 @@ class RockIdentificationService: ObservableObject {
         
         // Update state with success
         state = .success(result)
+        
+        // Notify FreeTierManager of successful identification
+        // This might trigger a soft paywall based on remaining count
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            FreeTierManager.shared.handleSuccessfulIdentification()
+        }
     }
     
     // Helper function to encode image data as a percent-encoded string
