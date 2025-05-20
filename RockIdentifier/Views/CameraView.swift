@@ -92,16 +92,16 @@ struct CameraView: View {
                 // Top controls
                 VStack {
                     HStack {
-                        // Remaining identifications counter (hard limit of 3)
+                        // Remaining identifications counter (or unlimited for premium)
                         HStack(spacing: 4) {
-                        Image(systemName: "camera.viewfinder")
-                        .foregroundColor(remainingIdentifications < 2 ? .orange : .green)
-                        .font(.system(size: 12))
-                        
-                        Text("\(remainingIdentifications)/3 remaining")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(remainingIdentifications < 2 ? .orange : .white)
+                            Image(systemName: remainingIdentifications == Int.max ? "infinity" : "camera.viewfinder")
+                            .foregroundColor(remainingIdentifications == Int.max ? .blue : (remainingIdentifications < 2 ? .orange : .green))
+                            .font(.system(size: 12))
+                            
+                            Text(remainingIdentifications == Int.max ? "Unlimited" : "\(remainingIdentifications)/3 remaining")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(remainingIdentifications == Int.max ? .blue : (remainingIdentifications < 2 ? .orange : .white))
                         }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -109,7 +109,8 @@ struct CameraView: View {
                     .cornerRadius(15)
                     .overlay(
                         RoundedRectangle(cornerRadius: 15)
-                            .stroke(remainingIdentifications < 2 ? Color.orange.opacity(0.7) : Color.green.opacity(0.3), lineWidth: 1)
+                            .stroke(remainingIdentifications == Int.max ? Color.blue.opacity(0.5) : 
+                                   (remainingIdentifications < 2 ? Color.orange.opacity(0.7) : Color.green.opacity(0.3)), lineWidth: 1)
                     )
                     .padding(.leading)
                     .onTapGesture(count: 5) {
@@ -232,14 +233,8 @@ struct CameraView: View {
                         
                         // Enhanced camera capture button with animation
                         Button(action: {
-                            if remainingIdentifications <= 0 {
-                                // Show soft paywall instead of capturing photo when no identifications left
-                                print("==> No identifications remaining - showing soft paywall")
-                                let haptic = UIImpactFeedbackGenerator(style: .medium)
-                                haptic.impactOccurred()
-                                PaywallManager.shared.showSoftPaywall()
-                            }
-                            else if let photoOutput = photoOutput {
+                            // Premium users or users with remaining IDs can take photos
+                            if remainingIdentifications == Int.max || remainingIdentifications > 0 {
                                 print("==> capturePhoto")
                                 // Haptic feedback for better user experience
                                 let haptic = UIImpactFeedbackGenerator(style: .rigid)
@@ -255,14 +250,23 @@ struct CameraView: View {
                                 setupCamera() // Make sure callback is set up before capture
                                 
                                 // Take the photo with optimized settings
-                                let settings = AVCapturePhotoSettings()
-                                settings.isHighResolutionPhotoEnabled = true
-                                if self.flashOn {
-                                    settings.flashMode = .on
+                                if let photoOutput = photoOutput {
+                                    let settings = AVCapturePhotoSettings()
+                                    settings.isHighResolutionPhotoEnabled = true
+                                    if self.flashOn {
+                                        settings.flashMode = .on
+                                    }
+                                    
+                                    print("==> Initiating photo capture with \(self.photoCaptureDelegate)")
+                                    photoOutput.capturePhoto(with: settings, delegate: photoCaptureDelegate)
                                 }
-                                
-                                print("==> Initiating photo capture with \(self.photoCaptureDelegate)")
-                                photoOutput.capturePhoto(with: settings, delegate: photoCaptureDelegate)
+                            }
+                            else {
+                                // Show soft paywall instead of capturing photo when no identifications left (free tier only)
+                                print("==> No identifications remaining - showing soft paywall")
+                                let haptic = UIImpactFeedbackGenerator(style: .medium)
+                                haptic.impactOccurred()
+                                PaywallManager.shared.showSoftPaywall()
                             }
                         }) {
                             ZStack {
@@ -285,9 +289,10 @@ struct CameraView: View {
                             }
                         }
                         .buttonStyle(CaptureButtonStyle())
-                        // Visual indicator that the button will show paywall instead of capturing when no identifications remain
+                        // Visual indicator that the button will show paywall instead of capturing when no identifications left
+                        // Only show for free tier users who have used all identifications
                         .overlay(
-                            remainingIdentifications <= 0 ? 
+                            remainingIdentifications <= 0 && remainingIdentifications != Int.max ? 
                                 ZStack {
                                     // White backdrop for visibility
                                     Circle()
