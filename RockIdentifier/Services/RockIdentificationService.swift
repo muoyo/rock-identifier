@@ -114,12 +114,8 @@ class RockIdentificationService: ObservableObject {
     
     // Function to identify a rock from an image
     func identifyRock(from image: UIImage) {
-        // Check free tier limits first
-        if !FreeTierManager.shared.checkAndHandleIdentificationAttempt() {
-            // Identification limit reached, show paywall
-            state = .error("You've reached your free identification limit. Subscribe to unlock unlimited identifications.")
-            return
-        }
+        // Note: Free tier limit checks are already handled in ContentView
+        // before calling this method, so we don't need to check again here
         
         state = .processing
         currentImage = image // Store the current image
@@ -224,6 +220,9 @@ class RockIdentificationService: ObservableObject {
             
             // Update state with success
             self.state = .success(result)
+            
+            // NOTE: Removed the handleSuccessfulIdentification call here because it's already called
+            // in ContentView's .onChange handler
         }
     }
     
@@ -744,11 +743,8 @@ class RockIdentificationService: ObservableObject {
         // Update state with success
         state = .success(result)
         
-        // Notify FreeTierManager of successful identification
-        // This might trigger a soft paywall based on remaining count
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            FreeTierManager.shared.handleSuccessfulIdentification()
-        }
+        // NOTE: Removed the handleSuccessfulIdentification call here because it's already called
+        // in ContentView's .onChange handler, which was causing double-counting
     }
     
     // Helper function to encode image data as a percent-encoded string

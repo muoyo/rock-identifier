@@ -196,21 +196,18 @@ struct ContentView: View {
         // Check if user has identifications remaining
         if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
             // Use FreeTierManager to handle this case - it will show the paywall if needed
-            if !FreeTierManager.shared.checkAndHandleIdentificationAttempt() {
-                // Show paywall
-                print("Identification limit reached - showing paywall")
-                
-                // Hide processing view immediately
-                withAnimation {
-                    showProcessingView = false
-                }
-                
-                // Show soft paywall
-                PaywallManager.shared.showSoftPaywall()
-                
-                // *** DO NOT PROCEED WITH IDENTIFICATION ***
-                return
+            print("Identification limit reached - showing paywall")
+            
+            // Hide processing view immediately
+            withAnimation {
+                showProcessingView = false
             }
+            
+            // Show soft paywall
+            PaywallManager.shared.showSoftPaywall()
+            
+            // *** DO NOT PROCEED WITH IDENTIFICATION ***
+            return
         }
         
         // Record the identification (updates counter for free tier)
