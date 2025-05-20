@@ -66,10 +66,9 @@ struct RockIdentifierApp: App {
                     let showedHardPaywall = PaywallManager.shared.showHardPaywallIfNeeded()
                     PaywallManager.shared.logState()
                     
-                    // If hard paywall wasn't shown, check if we should show soft paywall
-                    // based on remaining identifications
-                    if !showedHardPaywall && subscriptionManager.remainingIdentifications <= 0 {
-                        print("RockIdentifierApp: No identifications remaining, showing soft paywall on launch")
+                    // If hard paywall wasn't shown, always show soft paywall on launch
+                    if !showedHardPaywall {
+                        print("RockIdentifierApp: No hard paywall shown, showing soft paywall on launch")
                         PaywallManager.shared.showSoftPaywall()
                     }
                 } else {
@@ -83,10 +82,9 @@ struct RockIdentifierApp: App {
                 let showedHardPaywall = PaywallManager.shared.showHardPaywallIfNeeded()
                 PaywallManager.shared.logState()
                 
-                // If hard paywall wasn't shown, check if we should show soft paywall
-                // based on remaining identifications
-                if !showedHardPaywall && subscriptionManager.remainingIdentifications <= 0 {
-                    print("RockIdentifierApp: No identifications remaining, showing soft paywall after onboarding")
+                // If hard paywall wasn't shown, always show soft paywall after onboarding
+                if !showedHardPaywall {
+                    print("RockIdentifierApp: No hard paywall shown, showing soft paywall after onboarding")
                     PaywallManager.shared.showSoftPaywall()
                 }
             }) {

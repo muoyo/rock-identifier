@@ -440,6 +440,7 @@ struct PaywallView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title ?? plan.displayName)
                         .font(.headline)
+                        .foregroundColor(Color(.label)) // Use system label color for automatic dark mode support
                     
                     HStack {
                         if let originalPrice = originalPrice {
@@ -476,7 +477,7 @@ struct PaywallView: View {
                     HStack(spacing: 4) {
                         Text("FREE")
                             .bold()
-                            .foregroundColor(.black)
+                            .foregroundColor(Color(.label)) // Use system label color for automatic dark mode support
                         
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(.red)

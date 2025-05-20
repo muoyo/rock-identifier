@@ -230,7 +230,14 @@ struct CameraView: View {
                         
                         // Enhanced camera capture button with animation
                         Button(action: {
-                            if let photoOutput = photoOutput {
+                            if remainingIdentifications <= 0 {
+                                // Show soft paywall instead of capturing photo when no identifications left
+                                print("==> No identifications remaining - showing soft paywall")
+                                let haptic = UIImpactFeedbackGenerator(style: .medium)
+                                haptic.impactOccurred()
+                                PaywallManager.shared.showSoftPaywall()
+                            }
+                            else if let photoOutput = photoOutput {
                                 print("==> capturePhoto")
                                 // Haptic feedback for better user experience
                                 let haptic = UIImpactFeedbackGenerator(style: .rigid)
@@ -271,17 +278,24 @@ struct CameraView: View {
                             }
                         }
                         .buttonStyle(CaptureButtonStyle())
-                        // Visually indicate when no identifications remain
-                        .opacity(remainingIdentifications > 0 ? 1.0 : 0.5)
+                        // Visual indicator that the button will show paywall instead of capturing when no identifications remain
                         .overlay(
                             remainingIdentifications <= 0 ? 
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 18))
-                                    .foregroundColor(.white)
-                                    .padding(8)
-                                    .background(Color.red.opacity(0.7))
-                                    .clipShape(Circle())
-                                    .position(x: 60, y: 20)
+                                ZStack {
+                                    // White backdrop for visibility
+                                    Circle()
+                                        .fill(Color.white.opacity(0.15))
+                                        .frame(width: 32, height: 32)
+                                    
+                                    // Lock icon
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white)
+                                }
+                                .frame(width: 32, height: 32)
+                                .background(Color.red.opacity(0.8))
+                                .clipShape(Circle())
+                                .position(x: 60, y: 20)
                                 : nil
                         )
                         
