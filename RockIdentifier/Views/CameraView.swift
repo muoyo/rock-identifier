@@ -12,7 +12,8 @@ struct CameraView: View {
     
     @State private var captureSession: AVCaptureSession? = AVCaptureSession()
     @State private var photoOutput: AVCapturePhotoOutput? = AVCapturePhotoOutput()
-    private let photoCaptureDelegate = PhotoCaptureDelegate()
+    // Use a @StateObject to ensure the delegate persists throughout view lifecycle
+    @StateObject private var photoCaptureDelegate = PhotoCaptureDelegate()
     
     @State private var shutterFlash: Bool = false
     
@@ -62,6 +63,7 @@ struct CameraView: View {
                     CameraPreviewView(captureSession: captureSession, photoOutput: photoOutput, photoCaptureDelegate: photoCaptureDelegate)
                     .frame(width: screen?.size.width, height: screen?.size.height, alignment: .center)
                     .onAppear {
+                        print("==> CameraPreviewView appeared, checking camera permission")
                         checkCameraPermission()
                     }
                 }
@@ -248,6 +250,10 @@ struct CameraView: View {
                                     shutterFlash = true
                                 }
                                 
+                                // Make sure the delegate callback is set up
+                                print("==> Ensuring photo capture delegate callback is set up")
+                                setupCamera() // Make sure callback is set up before capture
+                                
                                 // Take the photo with optimized settings
                                 let settings = AVCapturePhotoSettings()
                                 settings.isHighResolutionPhotoEnabled = true
@@ -255,6 +261,7 @@ struct CameraView: View {
                                     settings.flashMode = .on
                                 }
                                 
+                                print("==> Initiating photo capture with \(self.photoCaptureDelegate)")
                                 photoOutput.capturePhoto(with: settings, delegate: photoCaptureDelegate)
                             }
                         }) {
@@ -374,7 +381,9 @@ struct CameraView: View {
             }
         }
         .onChange(of: selectedImage) { selectedImage in
+            print("==> onChange triggered for selectedImage")
             if let uploadedImage = selectedImage {
+                print("==> selectedImage is not nil: \(uploadedImage.size.width) x \(uploadedImage.size.height)")
                 // Show shutter flash for uploaded image
                 withAnimation {
                     shutterFlash = true
@@ -382,14 +391,18 @@ struct CameraView: View {
                 
                 // Use a short delay to allow flash animation to appear
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    print("==> Calling onCaptureImage with uploadedImage")
                     // Pass the uploaded image to the identification service
                     onCaptureImage(uploadedImage)
                     
                     // Reset selected image to nil for future uploads
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        print("==> Resetting selectedImage to nil")
                         self.selectedImage = nil
                     }
                 }
+            } else {
+                print("==> selectedImage is nil")
             }
         }
         .edgesIgnoringSafeArea(.all)
@@ -415,6 +428,9 @@ struct CameraView: View {
             photoOutput = AVCapturePhotoOutput()
         }
         
+        // Re-setup the camera if needed
+        setupCamera()
+        
         if let captureSession = captureSession, !captureSession.isRunning {
             DispatchQueue.global(qos: .userInitiated).async {
                 print("==> captureSession.startRunning()")
@@ -425,33 +441,90 @@ struct CameraView: View {
     
     private func setupCamera() {
         // Initialize and configure the capture session
-        photoCaptureDelegate.onPhotoCapture = { image in
-            // Resize image to appropriate size for rock identification
-            if let resizedImage = image.resized(toHeight: max(1000, image.size.height)) {
-                self.selectedImage = resizedImage
-                // Then call onCaptureImage with the captured image
-                DispatchQueue.main.async {
-                    onCaptureImage(resizedImage)
+        if let captureSession = captureSession {
+            // Configure the capture session for photo capture
+            captureSession.beginConfiguration()
+            
+            // Set photo quality preset
+            captureSession.sessionPreset = .photo
+            
+            // Add video input
+            if let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+               let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
+               captureSession.canAddInput(videoInput) {
+                captureSession.addInput(videoInput)
+                
+                // Configure camera for rock photography
+                try? videoDevice.lockForConfiguration()
+                if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
+                    videoDevice.focusMode = .continuousAutoFocus
+                }
+                videoDevice.unlockForConfiguration()
+            }
+            
+            // Add photo output
+            if let photoOutput = photoOutput, captureSession.canAddOutput(photoOutput) {
+                captureSession.addOutput(photoOutput)
+                photoOutput.isHighResolutionCaptureEnabled = true
+                if #available(iOS 13.0, *) {
+                    photoOutput.maxPhotoQualityPrioritization = .quality
+                }
+            }
+            
+            captureSession.commitConfiguration()
+            
+            // Start running the capture session
+            if !captureSession.isRunning {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    captureSession.startRunning()
                 }
             }
         }
+        
+        // Set up the photo capture delegate callback
+        print("==> Setting up photoCaptureDelegate callback")
+        photoCaptureDelegate.onPhotoCapture = { image in
+            print("==> onPhotoCapture called with image: \(image.size.width) x \(image.size.height)")
+            // Resize image to appropriate size for rock identification
+            if let resizedImage = image.resized(toHeight: max(1000, image.size.height)) {
+                print("==> Image resized to: \(resizedImage.size.width) x \(resizedImage.size.height)")
+                
+                // Important: Call onCaptureImage directly without going through selectedImage
+                print("==> DIRECT PATH: Calling onCaptureImage directly from camera capture")
+                DispatchQueue.main.async {
+                    self.onCaptureImage(resizedImage)
+                    // Don't set selectedImage to avoid duplicate calls
+                }
+            } else {
+                print("==> ERROR: Failed to resize image")
+            }
+        }
+        print("==> Camera setup completed")
     }
     
     func checkCameraPermission() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             // Already authorized
-            setupCamera()
+            DispatchQueue.main.async {
+                self.setupCamera()
+            }
         case .notDetermined:
             // Request permission
             AVCaptureDevice.requestAccess(for: .video) { granted in
                 if granted {
-                    setupCamera()
+                    DispatchQueue.main.async {
+                        self.setupCamera()
+                    }
+                } else {
+                    print("Camera permission denied")
+                    // Could show an alert here to inform the user
                 }
-                // Handle if not granted
             }
         case .denied, .restricted:
             // Permission denied or restricted, handle accordingly
+            print("Camera access denied or restricted")
+            // Could show an alert here to guide user to settings
             break
         @unknown default:
             break
@@ -547,100 +620,69 @@ struct CameraPreviewView: UIViewRepresentable {
     func makeUIView(context: Context) -> UIView {
         let view = UIView(frame: UIScreen.main.bounds)
 
-        // Setup capture session with optimal settings for rock photography
-        captureSession.sessionPreset = .photo
+        // Use the existing session configuration from CameraView
+        // Don't reconfigure the session here - just create the preview layer
         
-        if let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back) {
-            // Configure device for optimized rock photography (focus, exposure, etc.)
-            do {
-                try videoDevice.lockForConfiguration()
-                
-                // Enable auto focus with closer minimum focus distance
-                if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
-                    videoDevice.focusMode = .continuousAutoFocus
-                }
-                
-                // Set focus point to center for rock photography
-                if videoDevice.isFocusPointOfInterestSupported {
-                    videoDevice.focusPointOfInterest = CGPoint(x: 0.5, y: 0.5)
-                }
-                
-                // Enable auto exposure optimized for close-up objects
-                if videoDevice.isExposureModeSupported(.continuousAutoExposure) {
-                    videoDevice.exposureMode = .continuousAutoExposure
-                    // Set exposure point to center
-                    if videoDevice.isExposurePointOfInterestSupported {
-                        videoDevice.exposurePointOfInterest = CGPoint(x: 0.5, y: 0.5)
-                    }
-                }
-                
-                // Set minimum focus distance if available
-                if #available(iOS 15.0, *) {
-                    // Set to closest focus distance for macro-like effect
-                    if videoDevice.isLockingFocusWithCustomLensPositionSupported {
-                        // Using a near value for close focus (0.0 is infinity, 1.0 is closest)
-                        // For rock detail, we want closer focus, around 0.8-0.9
-                        videoDevice.setFocusModeLocked(lensPosition: 0.85) { _ in
-                            // After setting the initial focus, switch back to continuous
-                            try? videoDevice.lockForConfiguration()
-                            videoDevice.focusMode = .continuousAutoFocus
-                            videoDevice.unlockForConfiguration()
-                        }
-                    }
-                }
-                
-                // Optimize white balance for rock colors
-                if videoDevice.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
-                    videoDevice.whiteBalanceMode = .continuousAutoWhiteBalance
-                }
-                
-                videoDevice.unlockForConfiguration()
-            } catch {
-                print("Error configuring camera: \(error)")
-            }
-            
-            guard let videoDeviceInput = try? AVCaptureDeviceInput(device: videoDevice),
-                  captureSession.canAddInput(videoDeviceInput) else { return view }
-            captureSession.addInput(videoDeviceInput)
-            
-            // Add photo output with optimized settings for rock detail capture
-            guard captureSession.canAddOutput(photoOutput) else { return view }
-            captureSession.addOutput(photoOutput)
-            
-            // Configure maximum quality photo output for detailed rock textures
-            photoOutput.isHighResolutionCaptureEnabled = true
-            
-            // Configure for high quality output
-            if #available(iOS 13.0, *) {
-                photoOutput.maxPhotoQualityPrioritization = .quality
-            }
-            
-            
-            // Add preview layer
-            let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
-            previewLayer.frame = view.bounds
-            previewLayer.videoGravity = .resizeAspectFill
-            view.layer.addSublayer(previewLayer)
-            
-            // Start session
-            DispatchQueue.global(qos: .userInitiated).async {
-                self.captureSession.startRunning()
+        // Configure camera device for optimized rock photography if needed
+        if let connection = photoOutput.connection(with: .video) {
+            if connection.isVideoStabilizationSupported {
+                connection.preferredVideoStabilizationMode = .auto
             }
         }
-
+        
+        // Add preview layer using the existing session
+        let previewLayer = AVCaptureVideoPreviewLayer(session: captureSession)
+        previewLayer.frame = view.bounds
+        previewLayer.videoGravity = .resizeAspectFill
+        view.layer.addSublayer(previewLayer)
+        
         return view
     }
 
     func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
-class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
-    var onPhotoCapture: ((UIImage) -> Void)?
+class PhotoCaptureDelegate: NSObject, ObservableObject, AVCapturePhotoCaptureDelegate {
+    var onPhotoCapture: ((UIImage) -> Void)? {
+        didSet {
+            print("==> PhotoCaptureDelegate: onPhotoCapture callback set")
+        }
+    }
+
+    override init() {
+        super.init()
+        print("==> PhotoCaptureDelegate initialized with ID: \(ObjectIdentifier(self))")
+    }
 
     func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
-        guard let imageData = photo.fileDataRepresentation() else { return }
+        if let error = error {
+            print("Error capturing photo: \(error)")
+            return
+        }
+        
+        guard let imageData = photo.fileDataRepresentation() else {
+            print("Could not get image data from capture")
+            return
+        }
+        
         if let image = UIImage(data: imageData) {
-            onPhotoCapture?(image)
+            print("Photo captured successfully with dimensions: \(image.size.width) x \(image.size.height)")
+            print("Thread for photoOutput completion: \(Thread.isMainThread ? "Main thread" : "Background thread")")
+            
+            // Check if callback is set
+            if onPhotoCapture == nil {
+                print("==> ERROR: onPhotoCapture callback is nil!")
+            } else {
+                print("==> onPhotoCapture callback is set")
+            }
+            
+            // Always dispatch to main thread before calling back
+            DispatchQueue.main.async { 
+                print("Calling onPhotoCapture on main thread")
+                self.onPhotoCapture?(image)
+            }
+        } else {
+            print("Failed to create UIImage from captured data")
         }
     }
 }
