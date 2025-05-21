@@ -423,10 +423,12 @@ struct EnhancedRockResultView: View {
     
     // Save user notes and favorite status before dismissing
     private func saveFavoriteAndNotes() {
-        // This would update the collection manager's stored rock
-        // with the notes and favorite state
-        // For now, just print the values
-        print("Saving - Added to collection: \(addedToCollection), Notes: \(userNotes)")
+        // This updates the collection manager's stored rock with the notes
+        if addedToCollection && !userNotes.isEmpty {
+            // Only update notes if we've added the rock to collection and have notes
+            collectionManager.updateNotes(for: result.id, notes: userNotes)
+            print("Saved notes to collection: \(userNotes)")
+        }
     }
     
     // A-HA moment reveal animation sequence

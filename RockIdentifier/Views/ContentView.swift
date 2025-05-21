@@ -249,62 +249,21 @@ enum UserTier {
     case premium
 }
 
-// Placeholder for CollectionListView (to be implemented in Phase 3)
+// Collection list view - redirects to the real CollectionView
 struct CollectionListView: View {
     @Binding var isPresented: Bool
     var collectionManager: CollectionManager
     
     var body: some View {
-        NavigationView {
-            VStack {
-                Text("Your Collection")
-                    .font(.largeTitle)
-                    .padding()
-                
-                if collectionManager.collection.isEmpty {
-                    // Empty state
-                    VStack(spacing: 20) {
-                        Image(systemName: "square.stack.3d.up")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 80, height: 80)
-                            .foregroundColor(.gray)
-                        
-                        Text("No rocks in your collection yet")
-                            .font(.headline)
-                        
-                        Text("Take a photo to identify a rock and add it to your collection")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
-                        
-                        Button(action: {
-                            isPresented = false
-                        }) {
-                            Text("Start Identifying")
-                                .bold()
-                                .foregroundColor(.white)
-                                .padding()
-                                .background(Color.blue)
-                                .cornerRadius(10)
-                        }
-                        .padding(.top)
+        CollectionView()
+            .environmentObject(collectionManager)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        isPresented = false
                     }
-                    .padding()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(.systemBackground))
-                } else {
-                    // Collection list (placeholder)
-                    Text("Your rocks will appear here")
-                        .foregroundColor(.gray)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
-            .navigationBarItems(trailing: Button("Done") {
-                isPresented = false
-            })
-        }
     }
 }
 
