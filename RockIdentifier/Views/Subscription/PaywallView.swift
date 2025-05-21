@@ -308,6 +308,15 @@ struct PaywallView: View {
         }
         .modifier(InteractiveDismissModifier(isEnabled: shouldDisableSwipeToDismiss))
         .onAppear {
+            // Check if user has an active subscription - dismiss immediately if so
+            if subscriptionManager.status.isActive {
+                print("PaywallView: User has active subscription - dismissing paywall")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.presentationMode.wrappedValue.dismiss()
+                }
+                return
+            }
+            
             // Reset app state when view appears
             if !isDismissable {
                 // Hard paywall - never dismissable

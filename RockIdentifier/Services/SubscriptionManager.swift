@@ -9,6 +9,9 @@ import RevenueCat
 
 /// Enhanced SubscriptionManager with full RevenueCat integration
 class SubscriptionManager: NSObject, ObservableObject {
+    // Shared instance for checking subscription status from anywhere
+    static var shared: SubscriptionManager?
+    
     // MARK: - Published Properties
     
     /// Current subscription status
@@ -49,6 +52,9 @@ class SubscriptionManager: NSObject, ObservableObject {
         
         // Must call super.init() before using self in a subclass of NSObject
         super.init()
+        
+        // Set the shared instance for global access
+        SubscriptionManager.shared = self
         
         // Configure RevenueCat listeners
         setupPurchasesListener()
@@ -133,12 +139,23 @@ class SubscriptionManager: NSObject, ObservableObject {
         
         // Update the subscription status
         DispatchQueue.main.async {
+            // Check if status is changing from inactive to active
+            let wasActive = self.status.isActive
+            
             self.status = SubscriptionStatus(
                 plan: plan,
                 expirationDate: expirationDate,
                 isInTrial: isInTrial,
                 trialEndDate: trialEndDate
             )
+            
+            // Check if subscription status changed
+            let isNowActive = self.status.isActive
+            
+            // If subscription became active, post notification
+            if !wasActive && isNowActive {
+                NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
+            }
             
             // Save the updated status
             self.saveStatus()
@@ -357,6 +374,10 @@ class SubscriptionManager: NSObject, ObservableObject {
         objectWillChange.send()
         // Don't reset identification counter when a user downgrades
         // This ensures they still have their 3 total limit
+        
+        // Post notification about subscription status change
+        // This will trigger the PaywallManager to update its state
+        NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
     }
     
     /// Sets a mock premium subscription (for testing)
@@ -367,6 +388,10 @@ class SubscriptionManager: NSObject, ObservableObject {
         saveStatus()
         // Signal that object has changed for UI updates
         objectWillChange.send()
+        
+        // Post notification about subscription status change
+        // This will trigger the PaywallManager to update its state
+        NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
     }
     
     /// Toggles developer mode on/off
@@ -374,6 +399,10 @@ class SubscriptionManager: NSObject, ObservableObject {
         developerMode = !developerMode
         print("Developer mode: \(developerMode ? "ENABLED" : "DISABLED")")
         objectWillChange.send()
+        
+        // Post notification about subscription status change when developer mode changes
+        // This will trigger the PaywallManager to update its state
+        NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
     }
 }
 

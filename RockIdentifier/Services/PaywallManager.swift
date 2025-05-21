@@ -4,6 +4,7 @@
 
 import Foundation
 import SwiftUI
+import RevenueCat
 
 /// Simple, reliable manager for paywalls
 class PaywallManager {
@@ -26,6 +27,23 @@ class PaywallManager {
         currentAppVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
         
         print("PaywallManager: Initialized with app version \(currentAppVersion)")
+        
+        // Register for subscription change notifications
+        NotificationCenter.default.addObserver(self, selector: #selector(subscriptionStatusChanged), name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
+    }
+    
+    // Clean up observer when deallocated
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    // Handle subscription status changes
+    @objc private func subscriptionStatusChanged() {
+        // If user just subscribed, dismiss any paywalls
+        if hasActiveSubscription() {
+            print("PaywallManager: Subscription activated - dismissing paywalls")
+            AppState.shared.dismissPaywalls()
+        }
     }
     
     // MARK: - Public Methods
@@ -34,6 +52,12 @@ class PaywallManager {
     /// Returns true if paywall was shown
     @discardableResult
     func showHardPaywallIfNeeded() -> Bool {
+        // First check if user has an active subscription - never show paywall to subscribed users
+        if hasActiveSubscription() {
+            print("PaywallManager: User has active subscription - NOT showing hard paywall")
+            return false
+        }
+        
         // Get the last version where we showed a paywall
         let lastVersionShown = defaults.string(forKey: lastVersionShownKey) ?? ""
         
@@ -59,6 +83,12 @@ class PaywallManager {
     
     /// Show soft paywall
     func showSoftPaywall() {
+        // First check if user has an active subscription - never show paywall to subscribed users
+        if hasActiveSubscription() {
+            print("PaywallManager: User has active subscription - NOT showing soft paywall")
+            return
+        }
+        
         print("PaywallManager: SHOWING SOFT PAYWALL")
         AppState.shared.showSoftPaywall = true
     }
@@ -73,7 +103,22 @@ class PaywallManager {
     /// Log the current state (for debugging)
     func logState() {
         let lastVersionShown = defaults.string(forKey: lastVersionShownKey) ?? "none"
+        let subscriptionActive = hasActiveSubscription()
         print("PaywallManager STATE: lastVersionShown=\(lastVersionShown), currentVersion=\(currentAppVersion)")
         print("PaywallManager STATE: showHardPaywall=\(AppState.shared.showHardPaywall), showSoftPaywall=\(AppState.shared.showSoftPaywall)")
+        print("PaywallManager STATE: hasActiveSubscription=\(subscriptionActive)")
+    }
+    
+    /// Check if user has an active subscription
+    private func hasActiveSubscription() -> Bool {
+        // First check if developer mode is active with the shared SubscriptionManager
+        if let subscriptionManager = SubscriptionManager.shared, subscriptionManager.developerMode {
+            // In developer mode, trust the local status
+            return subscriptionManager.status.isActive
+        }
+        
+        // Otherwise check with RevenueCat
+        let customerInfo = Purchases.shared.cachedCustomerInfo
+        return customerInfo?.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess) ?? false
     }
 }
