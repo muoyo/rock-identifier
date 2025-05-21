@@ -45,71 +45,59 @@ class RockIdentificationService: ObservableObject {
     // Shared secret key for securing API requests
     private let sharedSecretKey = "pEDaZ/K0ITlKb8KALrm73TeNTZXZFEQl3jvIVFNgbEZ4WEjUO6y+gFM6SNKHjxlP"
     
-    // System prompt specifically designed for rock and mineral identification with strict JSON formatting
+    // System prompt specifically designed for rock and mineral identification with key-value formatting
     private let systemPrompt = """
-    You are a specialized AI assistant for RockIdentifier, an app that identifies rocks, minerals, crystals, and gemstones from images. Analyze the image and provide detailed rock/mineral identification.
+    You are a specialized AI assistant for RockIdentifier, an app that identifies rocks, minerals, crystals, and gemstones from images. You are an expert mineralogist who can identify specimens from even limited visual information.
 
-    IMPORTANT - YOUR RESPONSE MUST BE ONLY VALID JSON IN THIS EXACT FORMAT:
-    {
-      "name": "Full scientific name",
-      "category": "Rock/Mineral/Crystal/Gemstone",
-      "confidence": 0.95,
-      "physicalProperties": {
-        "color": "Common colors and variants",
-        "hardness": "Mohs scale value or range (e.g., 6-7)",
-        "luster": "Type of luster (e.g., Vitreous, Metallic)",
-        "streak": "Color when scraped on unglazed porcelain",
-        "transparency": "Transparent, Translucent, or Opaque",
-        "crystalSystem": "If applicable (e.g., Cubic, Hexagonal)",
-        "cleavage": "If applicable (e.g., Perfect in one direction)",
-        "fracture": "Type of fracture if relevant (e.g., Conchoidal)",
-        "specificGravity": "Density relative to water (e.g., 2.65)"
-      },
-      "chemicalProperties": {
-        "formula": "Chemical formula if applicable (e.g., SiO2)",
-        "composition": "Main chemical components in plain text",
-        "elements": [
-          {
-            "name": "Element name",
-            "symbol": "Element symbol",
-            "percentage": 80
-          }
-        ],
-        "mineralsPresent": ["Mineral 1", "Mineral 2"],
-        "reactivity": "Any notable chemical reactions"
-      },
-      "formation": {
-        "formationType": "Igneous, Sedimentary, Metamorphic, etc.",
-        "environment": "Where it typically forms",
-        "geologicalAge": "When it commonly formed",
-        "commonLocations": ["Location 1", "Location 2"],
-        "associatedMinerals": ["Associated Mineral 1", "Associated Mineral 2"],
-        "formationProcess": "Brief description of how it forms"
-      },
-      "uses": {
-        "industrial": ["Industrial use 1", "Industrial use 2"],
-        "historical": ["Historical use 1", "Historical use 2"],
-        "modern": ["Modern use 1", "Modern use 2"],
-        "metaphysical": ["Metaphysical property 1", "Metaphysical property 2"],
-        "funFacts": ["Interesting fact 1", "Interesting fact 2"]
-      }
-    }
+    IMPORTANT - ALWAYS try to identify the rock even with limited information. Make your best expert guess based on visual characteristics. Only return an error if the image is completely unidentifiable (completely blurry, not a rock, etc.).
 
-    STRICT JSON FORMATTING RULES:
-    1. Your response MUST be PURE JSON with NO explanatory text, markdown, or code blocks
-    2. All property names must be in double quotes: "property": value
-    3. All string values must be in double quotes: "property": "value"
-    4. Numeric values should not have quotes: "confidence": 0.95
-    5. No trailing commas at the end of arrays or objects
-    6. If a property has no value, use null instead of an empty string: "formula": null
-    7. Always use "uses" for the uses object
-    8. Ensure that all nested objects and arrays are properly closed
+    YOUR RESPONSE MUST FOLLOW THIS EXACT KEY-VALUE FORMAT:
 
-    If you can't identify the specimen with reasonable confidence, or if the image isn't a rock/mineral, respond with:
-    {
-      "error": "Specific reason for identification failure",
-      "suggestions": ["Suggestion 1", "Suggestion 2"]
-    }
+    NAME: Full scientific name of the rock/mineral
+    CATEGORY: Rock/Mineral/Crystal/Gemstone
+    CONFIDENCE: [value between 0.1-0.99]
+    COLOR: Common colors and variants
+    HARDNESS: Mohs scale value or range (e.g., 6-7)
+    LUSTER: Type of luster (e.g., Vitreous, Metallic)
+    STREAK: Color when scraped on unglazed porcelain
+    TRANSPARENCY: Transparent, Translucent, or Opaque
+    CRYSTAL_SYSTEM: If applicable (e.g., Cubic, Hexagonal)
+    CLEAVAGE: If applicable (e.g., Perfect in one direction)
+    FRACTURE: Type of fracture if relevant (e.g., Conchoidal)
+    SPECIFIC_GRAVITY: Density relative to water (e.g., 2.65)
+    FORMULA: Chemical formula if applicable (e.g., SiO2)
+    COMPOSITION: Main chemical components in plain text
+    ELEMENT1_NAME: Element name
+    ELEMENT1_SYMBOL: Element symbol
+    ELEMENT1_PERCENTAGE: Percentage value (e.g., 80)
+    ELEMENT2_NAME: Element name
+    ELEMENT2_SYMBOL: Element symbol
+    ELEMENT2_PERCENTAGE: Percentage value (e.g., 20)
+    FORMATION_TYPE: Igneous, Sedimentary, Metamorphic, etc.
+    ENVIRONMENT: Where it typically forms
+    GEOLOGICAL_AGE: When it commonly formed
+    LOCATION1: Common location where found
+    LOCATION2: Another common location
+    LOCATION3: Another common location
+    FORMATION_PROCESS: Brief description of how it forms
+    INDUSTRIAL_USE1: Industrial use
+    INDUSTRIAL_USE2: Another industrial use
+    HISTORICAL_USE1: Historical use
+    HISTORICAL_USE2: Another historical use
+    MODERN_USE1: Modern use
+    MODERN_USE2: Another modern use
+    METAPHYSICAL1: Metaphysical property
+    METAPHYSICAL2: Another metaphysical property
+    FUN_FACT1: Interesting fact about the rock/mineral
+    FUN_FACT2: Another interesting fact
+    FUN_FACT3: Another interesting fact
+
+    For low quality images, STILL PROVIDE YOUR BEST IDENTIFICATION with appropriate CONFIDENCE value (lower for less certain identifications).
+
+    Only use this error format if the image is completely unidentifiable:
+    ERROR: Specific reason for identification failure
+    SUGGESTION1: Suggestion for getting a better identification
+    SUGGESTION2: Another suggestion
     """
     
     // Function to identify a rock from an image
@@ -244,8 +232,8 @@ class RockIdentificationService: ObservableObject {
             ],
             [
                 "role": "user",
-                "content": "Identify this rock or mineral and provide all details in the required JSON format.",
-                "message": "Identify this rock or mineral and provide all details in the required JSON format.",
+                "content": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information - use a lower CONFIDENCE value (0.1-0.5) for less certain identifications, but still provide your expert analysis.",
+                "message": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information - use a lower CONFIDENCE value (0.1-0.5) for less certain identifications, but still provide your expert analysis.",
                 "image": encodedImageString
             ]
         ]
@@ -321,7 +309,28 @@ class RockIdentificationService: ObservableObject {
             return
         }
         
-        // Check for error response format first
+        // Check for a wrapped JSON error that contains our key-value error format
+        if jsonString.contains("\"error\":") && jsonString.contains("rawResponse") {
+            // This might be a JSON-wrapped key-value error response
+            if let data = jsonString.data(using: .utf8),
+               let jsonError = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+               let rawResponse = jsonError["rawResponse"] as? String,
+               rawResponse.contains("ERROR:") {
+                
+                // Extract the raw key-value error response
+                print("Found JSON-wrapped key-value error, parsing raw response")
+                parseKeyValueResponse(rawResponse, originalImage: originalImage)
+                return
+            }
+        }
+        
+        // Try to parse as key-value format
+        if jsonString.contains("NAME:") || jsonString.contains("ERROR:") {
+            parseKeyValueResponse(jsonString, originalImage: originalImage)
+            return
+        }
+        
+        // Check for error response format
         if let errorResponse = try? JSONDecoder().decode(IdentificationErrorResponse.self, from: data) {
             if let errorMessage = errorResponse.error {
                 // Create a user-friendly error message
@@ -751,6 +760,230 @@ class RockIdentificationService: ObservableObject {
     private func encodeToPercentEncodedString(_ data: Data) -> String {
         // Encode each byte as a percent-encoded character
         return data.map { String(format: "%%%02hhX", $0) }.joined()
+    }
+    
+    // Parse key-value format response
+    private func parseKeyValueResponse(_ responseText: String, originalImage: UIImage) {
+        // Log the original response for debugging
+        print("Parsing key-value response: \(responseText.prefix(500))")
+        
+        // Check for error response format
+        if responseText.contains("ERROR:") {
+            let components = responseText.components(separatedBy: "\n")
+            var errorMessage = "Unknown error"
+            var suggestions = [String]()
+            
+            for line in components {
+                if line.starts(with: "ERROR:") {
+                    errorMessage = line.replacingOccurrences(of: "ERROR:", with: "").trimmingCharacters(in: .whitespacesAndNewlines)
+                } else if line.starts(with: "SUGGESTION") {
+                    let suggestion = line.components(separatedBy: ":").dropFirst().joined(separator: ":").trimmingCharacters(in: .whitespacesAndNewlines)
+                    suggestions.append(suggestion)
+                }
+            }
+            
+            // Format user-friendly error message
+            var friendlyError = errorMessage
+            if !suggestions.isEmpty {
+                friendlyError += "\n\nSuggestions:\n"
+                for suggestion in suggestions {
+                    friendlyError += "• " + suggestion + "\n"
+                }
+            }
+            
+            print("Key-value error response detected: \(friendlyError)")
+            state = .error(friendlyError)
+            return
+        }
+        
+        // Split the response into lines and create a dictionary
+        let lines = responseText.components(separatedBy: "\n")
+        var valueDict = [String: String]()
+        
+        for line in lines {
+            // Skip empty lines
+            if line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                continue
+            }
+            
+            // Split by the first colon
+            let parts = line.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            if parts.count == 2 {
+                let key = String(parts[0]).trimmingCharacters(in: .whitespacesAndNewlines)
+                let value = String(parts[1]).trimmingCharacters(in: .whitespacesAndNewlines)
+                valueDict[key] = value
+            }
+        }
+        
+        // Log the parsed values for debugging
+        print("Parsed values: \(valueDict)")
+        
+        // Extract basic info
+        guard let name = valueDict["NAME"],
+              let category = valueDict["CATEGORY"] else {
+            state = .error("Missing required rock information. Please try again with a clearer image.")
+            return
+        }
+        
+        // Parse confidence
+        let confidence = Double(valueDict["CONFIDENCE"] ?? "0.7") ?? 0.7
+        
+        // Create PhysicalProperties
+        let physicalProperties = PhysicalProperties(
+            color: valueDict["COLOR"] ?? "Various",
+            hardness: valueDict["HARDNESS"] ?? "Unknown",
+            luster: valueDict["LUSTER"] ?? "Unknown",
+            streak: valueDict["STREAK"],
+            transparency: valueDict["TRANSPARENCY"],
+            crystalSystem: valueDict["CRYSTAL_SYSTEM"],
+            cleavage: valueDict["CLEAVAGE"],
+            fracture: valueDict["FRACTURE"],
+            specificGravity: valueDict["SPECIFIC_GRAVITY"]
+        )
+        
+        // Create elements array
+        var elements: [Element] = []
+        
+        // Extract up to 10 possible elements (assuming ELEMENT1, ELEMENT2, etc.)
+        for i in 1...10 {
+            let nameKey = "ELEMENT\(i)_NAME"
+            let symbolKey = "ELEMENT\(i)_SYMBOL"
+            let percentageKey = "ELEMENT\(i)_PERCENTAGE"
+            
+            if let name = valueDict[nameKey], let symbol = valueDict[symbolKey] {
+                let percentageStr = valueDict[percentageKey]
+                let percentage = Double(percentageStr ?? "")
+                
+                elements.append(Element(
+                    name: name,
+                    symbol: symbol,
+                    percentage: percentage
+                ))
+            } else {
+                // No more elements found
+                break
+            }
+        }
+        
+        // Create ChemicalProperties
+        let chemicalProperties = ChemicalProperties(
+            formula: valueDict["FORMULA"],
+            composition: valueDict["COMPOSITION"] ?? "Information not available",
+            elements: elements.isEmpty ? nil : elements,
+            mineralsPresent: nil,
+            reactivity: nil
+        )
+        
+        // Extract locations
+        var locations: [String] = []
+        for i in 1...10 {
+            let key = "LOCATION\(i)"
+            if let location = valueDict[key] {
+                locations.append(location)
+            } else {
+                // No more locations found
+                break
+            }
+        }
+        
+        // Create Formation
+        let formation = Formation(
+            formationType: valueDict["FORMATION_TYPE"] ?? "Unknown",
+            environment: valueDict["ENVIRONMENT"] ?? "Information not available",
+            geologicalAge: valueDict["GEOLOGICAL_AGE"],
+            commonLocations: locations.isEmpty ? nil : locations,
+            associatedMinerals: nil,
+            formationProcess: valueDict["FORMATION_PROCESS"] ?? "Information not available"
+        )
+        
+        // Extract industrial uses
+        var industrialUses: [String] = []
+        for i in 1...10 {
+            let key = "INDUSTRIAL_USE\(i)"
+            if let use = valueDict[key] {
+                industrialUses.append(use)
+            } else {
+                // No more uses found
+                break
+            }
+        }
+        
+        // Extract historical uses
+        var historicalUses: [String] = []
+        for i in 1...10 {
+            let key = "HISTORICAL_USE\(i)"
+            if let use = valueDict[key] {
+                historicalUses.append(use)
+            } else {
+                // No more uses found
+                break
+            }
+        }
+        
+        // Extract modern uses
+        var modernUses: [String] = []
+        for i in 1...10 {
+            let key = "MODERN_USE\(i)"
+            if let use = valueDict[key] {
+                modernUses.append(use)
+            } else {
+                // No more uses found
+                break
+            }
+        }
+        
+        // Extract metaphysical properties
+        var metaphysical: [String] = []
+        for i in 1...10 {
+            let key = "METAPHYSICAL\(i)"
+            if let property = valueDict[key] {
+                metaphysical.append(property)
+            } else {
+                // No more properties found
+                break
+            }
+        }
+        
+        // Extract fun facts
+        var funFacts: [String] = []
+        for i in 1...10 {
+            let key = "FUN_FACT\(i)"
+            if let fact = valueDict[key] {
+                funFacts.append(fact)
+            } else {
+                // No more facts found
+                break
+            }
+        }
+        
+        // Ensure we have at least one fun fact
+        if funFacts.isEmpty {
+            funFacts.append("This rock is identified as \(name).")
+        }
+        
+        // Create Uses
+        let uses = Uses(
+            industrial: industrialUses.isEmpty ? nil : industrialUses,
+            historical: historicalUses.isEmpty ? nil : historicalUses,
+            modern: modernUses.isEmpty ? nil : modernUses,
+            metaphysical: metaphysical.isEmpty ? nil : metaphysical,
+            funFacts: funFacts
+        )
+        
+        // Create the final result
+        let result = RockIdentificationResult(
+            image: originalImage,
+            name: name,
+            category: category,
+            confidence: confidence,
+            physicalProperties: physicalProperties,
+            chemicalProperties: chemicalProperties,
+            formation: formation,
+            uses: uses
+        )
+        
+        // Update state with success
+        state = .success(result)
     }
 }
 

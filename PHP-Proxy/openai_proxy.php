@@ -145,72 +145,65 @@
     }
     
     //CONFIGURE YOUR CUSTOM PROMPT:
-$custom_prompt = "You are a geological analysis AI specialized in rock and mineral identification. You MUST respond with PERFECTLY VALID JSON that follows strict JSON formatting rules.
+$custom_prompt = "You are a geological analysis AI specialized in rock and mineral identification. You are an expert mineralogist who can identify specimens from even limited visual information.
 
-Analyze the image and provide identification in valid JSON format matching this structure exactly:
-{
-    \"name\": \"Name of rock/mineral\",
-    \"category\": \"Rock/Mineral/Crystal/Gemstone\",
-    \"confidence\": 0.95,
-    \"physicalProperties\": {
-        \"color\": \"Color description\",
-        \"hardness\": \"Mohs scale value\",
-        \"luster\": \"Type of luster\",
-        \"streak\": \"Streak color\",
-        \"transparency\": \"Transparency level\",
-        \"crystalSystem\": \"Crystal system if applicable\",
-        \"cleavage\": \"Cleavage description\",
-        \"fracture\": \"Fracture type\",
-        \"specificGravity\": \"Specific gravity value\",
-        \"additionalProperties\": {\"property1\": \"value1\"}
-    },
-    \"chemicalProperties\": {
-        \"formula\": \"Chemical formula\",
-        \"composition\": \"Main components\",
-        \"elements\": [
-            {\"name\": \"Element name\", \"symbol\": \"Element symbol\", \"percentage\": 80}
-        ],
-        \"mineralsPresent\": [\"Mineral 1\", \"Mineral 2\"],
-        \"reactivity\": \"Any notable chemical reactions\",
-        \"additionalProperties\": {\"property1\": \"value1\"}
-    },
-    \"formation\": {
-        \"formationType\": \"Formation type\",
-        \"environment\": \"Formation environment\",
-        \"geologicalAge\": \"Age if known\",
-        \"commonLocations\": [\"Location 1\", \"Location 2\"],
-        \"associatedMinerals\": [\"Associated Mineral 1\", \"Associated Mineral 2\"],
-        \"formationProcess\": \"How it forms\",
-        \"additionalInfo\": {\"info1\": \"value1\"}
-    },
-    \"uses\": {
-        \"industrial\": [\"Use 1\", \"Use 2\"],
-        \"historical\": [\"Historical use\"],
-        \"modern\": [\"Modern use\"],
-        \"metaphysical\": [\"Metaphysical property\"],
-        \"funFacts\": [\"Interesting fact 1\", \"Interesting fact 2\"],
-        \"additionalUses\": {\"use1\": \"value1\"}
-    }
-}
+IMPORTANT - ALWAYS try to identify the rock even with limited information. Make your best expert guess based on visual characteristics. Only return an error if the image is completely unidentifiable (completely blurry, not a rock, etc.).
 
-For errors, use this format:
-{\"error\":\"Reason\",\"suggestions\":[\"Suggestion 1\", \"Suggestion 2\"]}
+Analyze the image and provide identification in this EXACT format:
 
-STRICT JSON FORMATTING RULES:
-1. Your response MUST be PURE JSON with NO explanatory text before or after
-2. DO NOT include markdown formatting, code blocks, or conversational language
-3. All property names must be in double quotes: \"property\": value
-4. All string values must be in double quotes: \"property\": \"value\"
-5. Never use escaped quotes inside property names: \"property\": value (NOT \\\"property\\\": value)
-6. Array elements must be separated by commas: [\"value1\", \"value2\"]
-7. Object properties must be separated by commas: {\"prop1\": \"val1\", \"prop2\": \"val2\"}
-8. No trailing commas at the end of arrays or objects: {\"prop\": \"val\"} (NOT {\"prop\": \"val\",})
-9. Pay special attention to the formation section - use standard JSON formatting
-10. Always use \"uses\" (never \"usees\") for the uses object
-11. If a property has no value, use null instead of an empty string: \"formula\": null
-12. Numeric values like confidence should not have quotes: \"confidence\": 0.95 (NOT \"confidence\": \"0.95\")
-13. Validate your entire JSON with a JSON validator before responding
-14. Ensure all brackets and quotes are balanced and properly closed";
+NAME: Full scientific name of the rock/mineral
+CATEGORY: Rock/Mineral/Crystal/Gemstone
+CONFIDENCE: [value between 0.1-0.99]
+COLOR: Common colors and variants
+HARDNESS: Mohs scale value or range (e.g., 6-7)
+LUSTER: Type of luster (e.g., Vitreous, Metallic)
+STREAK: Color when scraped on unglazed porcelain
+TRANSPARENCY: Transparent, Translucent, or Opaque
+CRYSTAL_SYSTEM: If applicable (e.g., Cubic, Hexagonal)
+CLEAVAGE: If applicable (e.g., Perfect in one direction)
+FRACTURE: Type of fracture if relevant (e.g., Conchoidal)
+SPECIFIC_GRAVITY: Density relative to water (e.g., 2.65)
+FORMULA: Chemical formula if applicable (e.g., SiO2)
+COMPOSITION: Main chemical components in plain text
+ELEMENT1_NAME: Element name
+ELEMENT1_SYMBOL: Element symbol
+ELEMENT1_PERCENTAGE: Percentage value (e.g., 80)
+ELEMENT2_NAME: Element name
+ELEMENT2_SYMBOL: Element symbol
+ELEMENT2_PERCENTAGE: Percentage value (e.g., 20)
+FORMATION_TYPE: Igneous, Sedimentary, Metamorphic, etc.
+ENVIRONMENT: Where it typically forms
+GEOLOGICAL_AGE: When it commonly formed
+LOCATION1: Common location where found
+LOCATION2: Another common location
+LOCATION3: Another common location
+FORMATION_PROCESS: Brief description of how it forms
+INDUSTRIAL_USE1: Industrial use
+INDUSTRIAL_USE2: Another industrial use
+HISTORICAL_USE1: Historical use
+HISTORICAL_USE2: Another historical use
+MODERN_USE1: Modern use
+MODERN_USE2: Another modern use
+METAPHYSICAL1: Metaphysical property
+METAPHYSICAL2: Another metaphysical property
+FUN_FACT1: Interesting fact about the rock/mineral
+FUN_FACT2: Another interesting fact
+FUN_FACT3: Another interesting fact
+
+For low quality images, STILL PROVIDE YOUR BEST IDENTIFICATION with appropriate CONFIDENCE value (lower for less certain identifications).
+
+Only use this error format if the image is completely unidentifiable:
+ERROR: Specific reason for identification failure
+SUGGESTION1: Suggestion for getting a better identification
+SUGGESTION2: Another suggestion
+
+IMPORTANT FORMATTING RULES:
+1. Start each response with 'NAME:' and end with the last fact
+2. Use only the EXACT keys specified above
+3. Put a single space after each colon
+4. If information is not available, skip that key entirely
+5. Keep all text on a single line for each key-value pair
+6. Do not include any other text, explanations, or formatting";
     
 
     //check if the client has provided messages:
@@ -484,20 +477,10 @@ try {
     
     // Simplified content structure for gpt-4o
     $item->content = [
-        ["type" => "text", "text" => "What type of rock is this? Analyze and identify the rock ONLY in a valid JSON format. IMPORTANT: Follow these formatting rules strictly:
-1. Every field name MUST be in double quotes (example: \"name\": \"value\")
-2. Do not put quotation marks around numeric values for 'confidence' (example: \"confidence\": 0.95)
-3. Use double quotes around all string values (example: \"color\": \"red\")
-4. All percentages must be strings in quotes (example: \"percentage\": \"~50\")
-5. The 'uses' field (not 'usees') must be properly formatted
-6. Never use escaped quotes in property names (WRONG: \\\"geologicalAge\\\")  
-7. Validate your entire JSON before responding
-8. Ensure all quotes, brackets, and braces are balanced and matched
-9. Your entire response must be valid JSON with no errors
-10. Return only valid JSON with no other text"],
+    ["type" => "text", "text" => "What type of rock is this? Analyze and identify the rock in KEY: VALUE format. IMPORTANT: Make your best identification effort even with limited information - use a lower CONFIDENCE value (0.1-0.5) if you're less certain, but still provide your expert analysis."],
         ["type" => "image_url", "image_url" => ["url" => $imageUrl]]
     ];
-    
+
     logError("Image URL set to: $imageUrl");
     logError("Successfully created message object with image");
     return $item;
@@ -662,26 +645,27 @@ catch (Exception $e) {
     // Debug what we got back
     logError("OpenAI API response received: " . json_encode($openai, JSON_PARTIAL_OUTPUT_ON_ERROR));
     
-        // Add more reliable JSON extraction and validation
+        // Add more reliable key-value extraction and validation
         if (isset($openai['choices'][0]['message']['content'])) {
             $message = $openai['choices'][0]['message']['content'];
             logError("Success! Response content length: " . strlen($message));
             
-            // Apply our validation and cleaning function
-            $message = cleanAndValidateJson($message);
-            logError("Cleaned and validated JSON - length: " . strlen($message));
-            
-            // Parse the JSON for additional validation
-            $jsonData = json_decode($message, true);
-            
-            if (json_last_error() === JSON_ERROR_NONE && $jsonData !== null) {
-                // The JSON is valid, we can use it directly
-                logError("JSON validation successful");
+            // Check for error response in key-value format first
+            if (strpos($message, 'ERROR:') !== false) {
+                // Just return the key-value error response directly
+                logError("Found key-value error response");
                 print($message);
                 exit;
             }
             
-            // If JSON validation failed, try the original extraction methods
+            // Check if it's in our expected key-value format
+            if (strpos($message, 'NAME:') !== false) {
+                // Just return the key-value response directly
+                logError("Found key-value format response");
+                print($message);
+                exit;
+            }
+            
             // Strip out any HTML comments and markdown code blocks before serving the response
             $message = preg_replace('/<!--.*?-->/s', '', $message);
             $message = preg_replace('/```json\s*([\s\S]*?)\s*```/s', '$1', $message);
@@ -741,10 +725,18 @@ catch (Exception $e) {
                 exit;
             }
             
-            // If we couldn't find valid JSON, return an error
-            logError("No valid JSON structure found");
+            // If we couldn't find valid JSON or key-value format, check for key-value format in the text
+            if (strpos($message, 'ERROR:') !== false || strpos($message, 'NAME:') !== false) {
+                // It's in key-value format, return directly
+                logError("Found key-value format in content check");
+                print($message);
+                exit;
+            }
+            
+            // If we still can't find a valid format, return a generic error
+            logError("No valid structure found");
             $errorJson = json_encode([
-                "error" => "No valid JSON structure found in the response",
+                "error" => "Unable to process the response",
                 "suggestions" => [
                     "Try taking a clearer photo of the rock",
                     "Ensure good lighting and focus",
