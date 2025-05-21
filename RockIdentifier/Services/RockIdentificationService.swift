@@ -55,7 +55,7 @@ class RockIdentificationService: ObservableObject {
 
     NAME: Full scientific name of the rock/mineral
     CATEGORY: Rock/Mineral/Crystal/Gemstone
-    CONFIDENCE: [value between 0.1-0.99]
+    CONFIDENCE: [value between 0.7-0.99]
     COLOR: Common colors and variants
     HARDNESS: Mohs scale value or range (e.g., 6-7)
     LUSTER: Type of luster (e.g., Vitreous, Metallic)
@@ -92,7 +92,14 @@ class RockIdentificationService: ObservableObject {
     FUN_FACT2: Another interesting fact
     FUN_FACT3: Another interesting fact
 
-    For low quality images, STILL PROVIDE YOUR BEST IDENTIFICATION with appropriate CONFIDENCE value (lower for less certain identifications).
+    Use this confidence scale for the CONFIDENCE field:
+    • 95-99%: Extremely confident (perfect specimen with all identifying features)
+    • 90-94%: Very confident (clear specimen with most identifying features)
+    • 80-89%: Confident (good specimen with several identifying features)
+    • 75-79%: Moderately confident (specimen with some identifying features)
+    • 70-74%: Somewhat confident (limited identifying features, but still recognizable)
+    
+    For low quality images, STILL PROVIDE YOUR BEST IDENTIFICATION with appropriate CONFIDENCE value, but never below 70%.
 
     Only use this error format if the image is completely unidentifiable:
     ERROR: Specific reason for identification failure
@@ -232,8 +239,8 @@ class RockIdentificationService: ObservableObject {
             ],
             [
                 "role": "user",
-                "content": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information - use a lower CONFIDENCE value (0.1-0.5) for less certain identifications, but still provide your expert analysis.",
-                "message": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information - use a lower CONFIDENCE value (0.1-0.5) for less certain identifications, but still provide your expert analysis.",
+                "content": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information. Use the confidence scale (70-99%) with appropriate values based on how certain you are, but never below 70% for any identifiable specimen.",
+                "message": "Identify this rock or mineral in KEY: VALUE format. IMPORTANT: Make your best identification attempt even with limited information. Use the confidence scale (70-99%) with appropriate values based on how certain you are, but never below 70% for any identifiable specimen.",
                 "image": encodedImageString
             ]
         ]
