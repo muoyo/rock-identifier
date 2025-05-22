@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SplashView: View {
     // Animation states
@@ -91,11 +92,17 @@ struct SplashView: View {
             showOutline = true
         }
         
+        // Subtle haptic for outline appearance
+        HapticManager.shared.lightImpact()
+        
         // Stage 2: Show top facet (0.8s)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
             withAnimation(.easeInOut(duration: 0.4)) {
                 showTopFacet = true
             }
+            
+            // Subtle haptic for top facet
+            HapticManager.shared.lightImpact()
         }
         
         // Stage 3: Show side facets (1.4s)
@@ -103,6 +110,9 @@ struct SplashView: View {
             withAnimation(.easeInOut(duration: 0.4)) {
                 showSideFacets = true
             }
+            
+            // Subtle haptic for side facets
+            HapticManager.shared.lightImpact()
         }
         
         // Stage 4: Show all facets (2.0s)
@@ -110,6 +120,9 @@ struct SplashView: View {
             withAnimation(.easeInOut(duration: 0.4)) {
                 showAllFacets = true
             }
+            
+            // Medium haptic for all facets appearing
+            HapticManager.shared.mediumImpact()
         }
         
         // Stage 5: Show scan line (2.6s)
@@ -117,6 +130,9 @@ struct SplashView: View {
             withAnimation(.easeInOut(duration: 0.3)) {
                 showScanLine = true
             }
+            
+            // Haptic for scan line appearance
+            HapticManager.shared.selectionChanged()
             
             // Animate scan line position
             withAnimation(.easeInOut(duration: 1.2)) {
@@ -130,6 +146,9 @@ struct SplashView: View {
                 showSparkle = true
                 showTitle = true
             }
+            
+            // Success haptic for final reveal
+            HapticManager.shared.successFeedback()
             
             // Complete animation after a longer pause (2 seconds)
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {

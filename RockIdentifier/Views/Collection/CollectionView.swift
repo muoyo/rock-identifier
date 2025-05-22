@@ -3,6 +3,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct CollectionView: View {
     @EnvironmentObject var collectionManager: CollectionManager
@@ -14,9 +15,7 @@ struct CollectionView: View {
     @State private var showingShareSheet = false
     @State private var shareItems: [Any] = []
     
-    // Haptic feedback generators
-    let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
-    let successGenerator = UINotificationFeedbackGenerator()
+    // Using HapticManager for feedback
     
     private let columns = [
         GridItem(.adaptive(minimum: 160), spacing: 16)
@@ -54,7 +53,7 @@ struct CollectionView: View {
                         if !collectionManager.collection.isEmpty {
                             Button(action: {
                                 isEditMode.toggle()
-                                impactGenerator.impactOccurred()
+                                HapticManager.shared.mediumImpact()
                                 if !isEditMode {
                                     selectedItems.removeAll()
                                 }
@@ -65,7 +64,7 @@ struct CollectionView: View {
                         
                         Menu {
                             Button(action: { 
-                                impactGenerator.impactOccurred()
+                                HapticManager.shared.lightImpact()
                                 isShowingSortOptions = true 
                             }) {
                                 Label("Sort", systemImage: "arrow.up.arrow.down")
@@ -74,7 +73,7 @@ struct CollectionView: View {
                             Divider()
                             
                             Button(action: {
-                                impactGenerator.impactOccurred()
+                                HapticManager.shared.lightImpact()
                                 showingExportView = true
                             }) {
                                 Label("Export Collection", systemImage: "square.and.arrow.up")
@@ -124,7 +123,7 @@ struct CollectionView: View {
                 ForEach(CollectionFilter.allCases, id: \.self) { filter in
                     Button(action: {
                         collectionManager.selectedFilter = filter
-                        impactGenerator.impactOccurred(intensity: 0.5)
+                        HapticManager.shared.selectionChanged()
                     }) {
                         Text(filter.rawValue)
                             .padding(.vertical, 8)
@@ -291,26 +290,26 @@ struct CollectionView: View {
     
     // Toggle favorite status for all selected items
     private func toggleFavoriteForSelectedItems() {
-        impactGenerator.impactOccurred(intensity: 0.7)
+        HapticManager.shared.mediumImpact()
         for id in selectedItems {
             collectionManager.toggleFavorite(for: id)
         }
-        successGenerator.notificationOccurred(.success)
+        HapticManager.shared.successFeedback()
     }
     
     // Delete all selected items
     private func deleteSelectedItems() {
-        impactGenerator.impactOccurred(intensity: 0.9)
+        HapticManager.shared.heavyImpact()
         for id in selectedItems {
             collectionManager.removeRock(withID: id)
         }
         selectedItems.removeAll()
-        successGenerator.notificationOccurred(.success)
+        HapticManager.shared.successFeedback()
     }
     
     // Share selected items
     private func shareSelectedItems() {
-        impactGenerator.impactOccurred(intensity: 0.6)
+        HapticManager.shared.mediumImpact()
         
         // Create share items
         shareItems = []

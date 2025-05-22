@@ -4,6 +4,7 @@
 
 import SwiftUI
 import AVFoundation
+import UIKit
 
 struct CameraView: View {
     
@@ -117,14 +118,14 @@ struct CameraView: View {
                         // Handle secret developer mode activation
                         NotificationCenter.default.post(name: NSNotification.Name("ToggleDeveloperMode"), object: nil)
                         // Haptic feedback for confirmation
-                        let generator = UINotificationFeedbackGenerator()
-                        generator.notificationOccurred(.success)
+                        HapticManager.shared.successFeedback()
                     }
                         
                         Spacer()
                         
                         // Flash toggle button
                         Button(action: {
+                            HapticManager.shared.lightImpact()
                             self.toggleFlashlight()
                         }) {
                             Image(systemName: flashOn ? "bolt.fill" : "bolt.slash")
@@ -139,6 +140,7 @@ struct CameraView: View {
                         
                         // Grid toggle button
                         Button(action: {
+                            HapticManager.shared.lightImpact()
                             showGrid.toggle()
                         }) {
                             Image(systemName: showGrid ? "grid" : "grid.circle")
@@ -207,8 +209,7 @@ struct CameraView: View {
                     HStack {
                         // Enhanced photo library button
                         Button(action: {
-                            let haptic = UIImpactFeedbackGenerator(style: .medium)
-                            haptic.impactOccurred()
+                            HapticManager.shared.mediumImpact()
                             showImagePicker = true
                         }) {
                             ZStack {
@@ -237,8 +238,7 @@ struct CameraView: View {
                             if remainingIdentifications == Int.max || remainingIdentifications > 0 {
                                 print("==> capturePhoto")
                                 // Haptic feedback for better user experience
-                                let haptic = UIImpactFeedbackGenerator(style: .rigid)
-                                haptic.impactOccurred()
+                                HapticManager.shared.lightImpact()
                                 
                                 // Show shutter flash effect with improved animation
                                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -264,8 +264,7 @@ struct CameraView: View {
                             else {
                                 // Show soft paywall instead of capturing photo when no identifications left (free tier only)
                                 print("==> No identifications remaining - showing soft paywall")
-                                let haptic = UIImpactFeedbackGenerator(style: .medium)
-                                haptic.impactOccurred()
+                                HapticManager.shared.warningFeedback()
                                 PaywallManager.shared.showSoftPaywall()
                             }
                         }) {
@@ -315,8 +314,7 @@ struct CameraView: View {
                         
                         // Enhanced collection button
                         Button(action: {
-                            let haptic = UIImpactFeedbackGenerator(style: .medium)
-                            haptic.impactOccurred()
+                            HapticManager.shared.mediumImpact()
                             showCollection.toggle()
                         }) {
                             ZStack {

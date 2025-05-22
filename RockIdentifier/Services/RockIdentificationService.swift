@@ -7,6 +7,7 @@ import SwiftUI
 import Combine
 // Import CommonCrypto for MD5 hashing
 import CommonCrypto
+import UIKit
 
 enum IdentificationState: Equatable {
     case idle
@@ -268,11 +269,15 @@ class RockIdentificationService: ObservableObject {
             DispatchQueue.main.async {
                 if let error = error, !error.isEmpty {
                     self.state = .error("Network error: \(error)")
+                    // Add haptic feedback for error
+                    HapticManager.shared.errorFeedback()
                     return
                 }
                 
                 guard let data = data, data.count > 0 else {
                     self.state = .error("Empty response received from server. Please try again.")
+                    // Add haptic feedback for error
+                    HapticManager.shared.errorFeedback()
                     return
                 }
                 
@@ -396,8 +401,14 @@ class RockIdentificationService: ObservableObject {
             
             // If all parsing attempts failed
             state = .error("Could not parse the rock identification data. Please try again with a clearer image.")
+            
+            // Add haptic feedback for error
+            HapticManager.shared.errorFeedback()
         } catch {
             state = .error("Failed to process result: \(error.localizedDescription)")
+            
+            // Add haptic feedback for error
+            HapticManager.shared.errorFeedback()
         }
     }
     
@@ -759,6 +770,9 @@ class RockIdentificationService: ObservableObject {
         // Update state with success
         state = .success(result)
         
+        // Add haptic feedback for successful identification
+        HapticManager.shared.successFeedback()
+        
         // NOTE: Removed the handleSuccessfulIdentification call here because it's already called
         // in ContentView's .onChange handler, which was causing double-counting
     }
@@ -991,6 +1005,9 @@ class RockIdentificationService: ObservableObject {
         
         // Update state with success
         state = .success(result)
+        
+        // Add haptic feedback for successful identification
+        HapticManager.shared.successFeedback()
     }
 }
 

@@ -120,7 +120,8 @@ struct ProcessingView: View {
                     Text("Analyzing Your Rock")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
-                        .opacity(0.9)
+                        .shadow(color: .black.opacity(0.7), radius: 2, x: 0, y: 1)
+                        .opacity(1.0)
                         .scaleEffect(pulseScale)
                         .padding(.top, 20)
                     

@@ -186,8 +186,7 @@ struct ContentView: View {
             showDeveloperSettings = true
             
             // Provide haptic feedback
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(.success)
+            HapticManager.shared.successFeedback()
         }
     }
     
@@ -365,8 +364,7 @@ struct RockResultView: View {
                             addedToCollection = true
                             
                             // Haptic feedback
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.success)
+                            HapticManager.shared.successFeedback()
                         }
                     }) {
                         Label(
@@ -382,6 +380,7 @@ struct RockResultView: View {
                     }
                     
                     Button(action: {
+                        HapticManager.shared.mediumImpact()
                         showShareSheet = true
                     }) {
                         Label("Share", systemImage: "square.and.arrow.up")
@@ -414,7 +413,10 @@ struct TabButton: View {
     let action: () -> Void
     
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            HapticManager.shared.selectionChanged()
+            action()
+        }) {
             VStack(spacing: 8) {
                 Image(systemName: systemImage)
                     .font(.system(size: 16))

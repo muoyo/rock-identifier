@@ -193,8 +193,7 @@ struct PaywallView: View {
                                     .cornerRadius(16)
                             )
                             .onChange(of: trialEnabled) { newValue in
-                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                generator.impactOccurred()
+                                HapticManager.shared.selectionChanged()
                                 
                                 // Link toggle to selected plan
                                 if newValue {
@@ -441,8 +440,7 @@ struct PaywallView: View {
     // Helper function to create plan buttons
     private func planButton(plan: SubscriptionPlan, title: String? = nil, originalPrice: String? = nil, discount: String? = nil, isTrial: Bool = false, showTrial: Bool = false) -> some View {
         Button(action: {
-            let generator = UIImpactFeedbackGenerator(style: .light)
-            generator.impactOccurred()
+            HapticManager.shared.selectionChanged()
             selectedPlan = plan
         }) {
             HStack {
@@ -518,8 +516,7 @@ struct PaywallView: View {
     // Purchase subscription
     private func purchaseSubscription() {
         // Add haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        HapticManager.shared.mediumImpact()
         
         // Show loading indicator
         isLoading = true
@@ -531,15 +528,17 @@ struct PaywallView: View {
                 
                 if success {
                     // Purchase successful
+                    HapticManager.shared.successFeedback()
                     self.showSuccessMessage = true
                 } else if let error = error {
                     // For user cancellations, don't show error message
                     if let nsError = error as NSError?, nsError.code == 1005 {  // User cancelled
-                        // Do nothing, user cancelled
+                    // Do nothing, user cancelled
                     } else {
-                        // Show error message for other errors
+                    // Show error message for other errors
+                    HapticManager.shared.errorFeedback()
                         self.showErrorAlert(message: error.localizedDescription)
-                    }
+                                }
                 }
             }
         }
@@ -569,8 +568,7 @@ struct PaywallView: View {
     // Restore purchases
     private func restorePurchases() {
         // Add haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .light)
-        generator.impactOccurred()
+        HapticManager.shared.lightImpact()
         
         // Show loading indicator
         isLoading = true
