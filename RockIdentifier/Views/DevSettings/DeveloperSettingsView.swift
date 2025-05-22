@@ -12,6 +12,7 @@ struct DeveloperSettingsView: View {
     @State private var lastAction = ""
     @State private var showPaywall = false
     @State private var isHardPaywall = false
+    @State private var showAnimationDemo = false
     
     var body: some View {
         NavigationView {
@@ -148,6 +149,64 @@ struct DeveloperSettingsView: View {
                     }
                 }
                 
+                Section(header: Text("Result Animation Testing")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Animation Timing Profile")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        Picker("Timing Profile", selection: Binding(
+                            get: { ResultRevealAnimations.currentProfile },
+                            set: { newProfile in
+                                ResultRevealAnimations.currentProfile = newProfile
+                                lastAction = "Changed animation profile to \(newProfile.rawValue)"
+                                showActionConfirmation = true
+                            }
+                        )) {
+                            ForEach(ResultRevealAnimations.TimingProfile.allCases, id: \.self) { profile in
+                                Text(profile.rawValue).tag(profile)
+                            }
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        
+                        Text("Test different timing profiles for the A-HA moment reveal animation")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    
+                    Button(action: {
+                        let profile = ResultRevealAnimations.currentProfile
+                        let timing = profile.config
+                        lastAction = """
+                        Current Profile: \(profile.rawValue)
+                        Total Duration: \(String(format: "%.1f", timing.actionsStartTime + 0.5))s
+                        Dramatic Pause: \(String(format: "%.1f", timing.dramaticPause))s
+                        Name Focus: \(String(format: "%.1f", timing.nameFocus))s
+                        Sparkles: \(String(format: "%.1f", timing.sparklesDuration))s
+                        """
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Show Timing Details")
+                            Spacer()
+                            Image(systemName: "timer")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    Button(action: {
+                        showAnimationDemo = true
+                    }) {
+                        HStack {
+                            Text("Preview Animation")
+                            Spacer()
+                            Image(systemName: "play.circle.fill")
+                                .foregroundColor(.green)
+                        }
+                    }
+                }
+                
                 // Future sections can be added here
                 Section(header: Text("App Info")) {
                     HStack {
@@ -180,6 +239,9 @@ struct DeveloperSettingsView: View {
             .sheet(isPresented: $showPaywall) {
                 PaywallView(isDismissable: !isHardPaywall)
                     .environmentObject(subscriptionManager)
+            }
+            .sheet(isPresented: $showAnimationDemo) {
+                AnimationDemoView()
             }
         }
     }

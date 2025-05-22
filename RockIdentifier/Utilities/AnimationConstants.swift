@@ -101,6 +101,21 @@ struct AnimationConstants {
         return standardDuration
     }
     
+    /// Adjusts a complete timing configuration for reduced motion
+    static func adjustedResultRevealTiming(_ config: ResultRevealAnimations.TimingConfiguration) -> ResultRevealAnimations.TimingConfiguration {
+        #if os(iOS)
+        let prefersReducedMotion = UIAccessibility.isReduceMotionEnabled
+        #else
+        let prefersReducedMotion = false
+        #endif
+        
+        if prefersReducedMotion {
+            // Return a simplified, faster timing profile for reduced motion
+            return ResultRevealAnimations.TimingProfile.energetic.config
+        }
+        return config
+    }
+    
     /// Returns the most appropriate animation based on reduced motion settings
     static func accessibleAnimation(_ animation: Animation) -> Animation {
         #if os(iOS)
@@ -114,6 +129,21 @@ struct AnimationConstants {
             return .easeInOut(duration: 0.3)
         }
         return animation
+    }
+    
+    /// Returns an accessible version of result reveal curves
+    static func accessibleResultRevealCurve(_ curve: Animation) -> Animation {
+        #if os(iOS)
+        let prefersReducedMotion = UIAccessibility.isReduceMotionEnabled
+        #else
+        let prefersReducedMotion = false
+        #endif
+        
+        if prefersReducedMotion {
+            // Simplify complex reveal animations for reduced motion
+            return .easeInOut(duration: adjustedDuration(0.5))
+        }
+        return curve
     }
     
     // MARK: - Common Animation Presets
@@ -138,4 +168,25 @@ struct AnimationConstants {
     
     /// Animation for emphasis/attention
     static let emphasis = Curve.bouncySpring(duration: Medium.long)
+    
+    // MARK: - Result Reveal Integration
+    
+    /// Quick access to result reveal animation curves
+    /// These integrate with the ResultRevealAnimations system for consistency
+    struct ResultReveal {
+        /// Dramatic entrance for the rock name
+        static let dramaticEntrance = Curve.spring(duration: 0.8)
+        
+        /// Storytelling flow for sequential reveals
+        static let storytellingFlow = Curve.easeInOut(duration: 0.7)
+        
+        /// Attention-grabbing pulse for focus moments
+        static let attentionGrab = Curve.spring(duration: 0.4)
+        
+        /// Gentle fade for supporting elements
+        static let gentleFade = Curve.easeInOut(duration: 0.5)
+        
+        /// Bouncy reveal for playful elements
+        static let bouncyReveal = Curve.bouncySpring(duration: 0.6)
+    }
 }

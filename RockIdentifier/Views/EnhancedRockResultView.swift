@@ -18,18 +18,24 @@ struct EnhancedRockResultView: View {
     @State private var userNotes: String = ""
     @State private var backgroundGradientRotation = 0.0
     
-    // Animation state variables
+    // Enhanced animation state variables
     @State private var revealState: RevealState = .initial
-    @State private var imageScale: CGFloat = 0.8
-    @State private var imageOpacity: Double = 0
-    @State private var nameOpacity: Double = 0
-    @State private var nameScale: CGFloat = 0.95
-    @State private var categoryOpacity: Double = 0
-    @State private var confidenceOpacity: Double = 0
-    @State private var tabsOpacity: Double = 0
-    @State private var contentOpacity: Double = 0
-    @State private var actionsOpacity: Double = 0
-    @State private var sparklesActive: Bool = false
+    @State private var animationStage: AnimationStage = .waiting
+    @State private var isNameFocused: Bool = false
+    @State private var isSparklesActive: Bool = false
+    @State private var tabRevealIndex: Int = -1
+    @State private var propertyRevealIndex: Int = -1
+    @State private var showNameSpotlight: Bool = false
+    @State private var isDramaticPause: Bool = false
+    @State private var pauseProgress: Double = 0.0
+    
+    // Individual reveal states for fine-grained control
+    @State private var imageRevealed: Bool = false
+    @State private var nameRevealed: Bool = false
+    @State private var categoryRevealed: Bool = false
+    @State private var confidenceRevealed: Bool = false
+    @State private var tabsRevealed: [Bool] = [false, false, false, false]
+    @State private var actionsRevealed: Bool = false
     
     // Haptic feedback generators
     let impactGenerator = UIImpactFeedbackGenerator(style: .medium)
@@ -48,15 +54,24 @@ struct EnhancedRockResultView: View {
         case complete
     }
     
-    // A-HA reveal animation timing - optimized for delight
-    let imageAnimationDelay: Double = 0.2
-    let nameAnimationDelay: Double = 0.8
-    let categoryAnimationDelay: Double = 1.3
-    let confidenceAnimationDelay: Double = 1.7
-    let tabsAnimationDelay: Double = 2.1
-    let contentAnimationDelay: Double = 2.3
-    let actionsAnimationDelay: Double = 2.5
-    let confettiAnimationDelay: Double = 1.4
+    // Animation stage for the enhanced reveal system
+    enum AnimationStage {
+        case waiting
+        case imageAppearing
+        case dramaticPause
+        case nameAppearing
+        case nameFocused
+        case propertiesAppearing
+        case tabsAppearing
+        case contentRevealing
+        case actionsRevealing
+        case complete
+    }
+    
+    // Enhanced timing system using ResultRevealAnimations
+    private var timing: ResultRevealAnimations.TimingConfiguration {
+        ResultRevealAnimations.timing
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -82,9 +97,15 @@ struct EnhancedRockResultView: View {
                         }
                     }
                     
-                    // Sparkles/particles effect (shown during A-HA moment)
-                    if sparklesActive {
-                        SparklesView()
+                    // Enhanced sparkles effect (shown during A-HA moment)
+                    EnhancedSparklesView(
+                        isActive: isSparklesActive,
+                        duration: timing.sparklesDuration
+                    )
+                    
+                    // Name spotlight effect during focus moment
+                    if showNameSpotlight {
+                        Color.clear.nameSpotlight(isActive: showNameSpotlight, geometry: geometry)
                     }
                     
                     // Main content
@@ -109,8 +130,47 @@ struct EnhancedRockResultView: View {
                                                 .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 0)
                                                     )
                                                     .shadow(color: Color.primary.opacity(0.2), radius: 15, x: 0, y: 8)
-                                                    .scaleEffect(imageScale)
-                                                    .opacity(imageOpacity)
+                                                    .enhancedReveal(stage: .image, isActive: imageRevealed)
+                                            .overlay(
+                                                // Dramatic pause progress indicator for placeholder
+                                                Group {
+                                                    if isDramaticPause {
+                                                        VStack {
+                                                            Spacer()
+                                                            HStack {
+                                                                Spacer()
+                                                                
+                                                                // Subtle pulsing dots to show progress
+                                                                HStack(spacing: 4) {
+                                                                    ForEach(0..<3) { index in
+                                                                        Circle()
+                                                                            .fill(Color.white.opacity(0.8))
+                                                                            .frame(width: 6, height: 6)
+                                                                            .scaleEffect(pauseProgress > Double(index) * 0.33 ? 1.2 : 0.8)
+                                                                            .opacity(pauseProgress > Double(index) * 0.33 ? 1.0 : 0.4)
+                                                                            .animation(
+                                                                                Animation.easeInOut(duration: 0.4)
+                                                                                    .repeatForever(autoreverses: true)
+                                                                                    .delay(Double(index) * 0.2),
+                                                                                value: isDramaticPause
+                                                                            )
+                                                                    }
+                                                                }
+                                                                .padding(.horizontal, 12)
+                                                                .padding(.vertical, 8)
+                                                                .background(
+                                                                    Capsule()
+                                                                        .fill(Color.black.opacity(0.3))
+                                                                )
+                                                                
+                                                                Spacer()
+                                                            }
+                                                            .padding(.bottom, 16)
+                                                        }
+                                                        .transition(.opacity)
+                                                    }
+                                                }
+                                            )
                                     } else {
                                         RoundedRectangle(cornerRadius: 20)
                                             .fill(Color.gray.opacity(0.3))
@@ -120,54 +180,62 @@ struct EnhancedRockResultView: View {
                                                     .font(.system(size: 50))
                                                     .foregroundColor(.white.opacity(0.7))
                                             )
-                                            .scaleEffect(imageScale)
-                                            .opacity(imageOpacity)
+                                            .enhancedReveal(stage: .image, isActive: imageRevealed)
                                     }
                                     
-                                    // Recognition badge - appears in lower right of image
-                                    if revealState != .initial {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "checkmark.seal.fill")
-                                                .foregroundColor(.white)
-                                            Text("Identified")
-                                                .font(.caption)
-                                                .bold()
-                                                .foregroundColor(.white)
+                                    // Recognition badge - appears with enhanced timing and centered
+                                    if imageRevealed {
+                                        HStack {
+                                            Spacer()
+                                            VStack {
+                                                Spacer()
+                                                HStack(spacing: 4) {
+                                                    Image(systemName: "checkmark.seal.fill")
+                                                        .foregroundColor(.white)
+                                                        .font(.system(size: 12, weight: .bold))
+                                                    Text("Identified")
+                                                        .font(.caption2)
+                                                        .bold()
+                                                        .foregroundColor(.white)
+                                                }
+                                                .padding(.horizontal, 10)
+                                                .padding(.vertical, 5)
+                                                .background(StyleGuide.Colors.emeraldGradient)
+                                                .cornerRadius(12)
+                                                .shadow(color: StyleGuide.Colors.emeraldGreen.opacity(0.4), radius: 4, x: 0, y: 2)
+                                                .padding(.trailing, 16)
+                                                .padding(.bottom, 16)
+                                            }
                                         }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.green)
-                                        .cornerRadius(16)
-                                        .offset(x: -16, y: 16)
-                                        .opacity(min(imageOpacity * 1.3, 1.0))
-                                        .animation(.easeInOut(duration: 0.5).delay(0.8), value: imageOpacity)
+                                        .enhancedReveal(stage: .image, isActive: imageRevealed)
                                     }
                                 }
                                 .padding(.top, 20)
                                 
                                 // Rock name and category
                                 VStack(spacing: 8) {
-                                    // Rock name
+                                    // Rock name with enhanced focus effects - neutral colors for better readability
                                     Text(result.name)
                                         .font(.system(size: 36, weight: .bold, design: .rounded))
+                                        .foregroundColor(.primary)  // Uses system primary (black in light mode, white in dark)
                                         .multilineTextAlignment(.center)
-                                        .foregroundColor(.primary)
                                         .padding(.horizontal)
-                                        .scaleEffect(nameScale)
-                                        .opacity(nameOpacity)
-                                        .shadow(color: Color.blue.opacity(0.2), radius: 2, x: 0, y: 1)
+                                        .enhancedReveal(stage: .name, isActive: nameRevealed)
+                                        .shadow(color: Color.black.opacity(0.1), radius: isNameFocused ? 8 : 2, x: 0, y: 1)
+                                        .scaleEffect(isNameFocused ? 1.05 : 1.0)
+                                        .animation(ResultRevealAnimations.Curves.attentionGrab, value: isNameFocused)
                                     
-                                    // Category
+                                    // Category with staggered reveal - neutral grey for subtitle
                                     Text(result.category)
                                         .font(.headline)
-                                        .foregroundColor(.secondary)
-                                        .opacity(categoryOpacity)
+                                        .foregroundColor(.secondary)  // System secondary grey
+                                        .enhancedReveal(stage: .category, isActive: categoryRevealed)
                                     
-                                    // Confidence indicator
+                                    // Confidence indicator with enhanced reveal
                                     EnhancedConfidenceIndicator(value: result.confidence)
-                                        .frame(width: 160, height: 36)
+                                        .frame(width: 180, height: 40)
                                         .padding(.top, 8)
-                                        .opacity(confidenceOpacity)
+                                        .enhancedReveal(stage: .confidence, isActive: confidenceRevealed)
                                 }
                                 .padding(.vertical, 16)
                                 
@@ -182,8 +250,9 @@ struct EnhancedRockResultView: View {
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 selectedTab = 0
                                             }
-                                            impactGenerator.impactOccurred(intensity: 0.5)
+                                            HapticManager.shared.selectionChanged()
                                         }
+                                        .enhancedReveal(stage: .tabs(index: 0), isActive: tabsRevealed[0])
                                         
                                         EnhancedTabButton(
                                             title: "Chemical",
@@ -193,8 +262,9 @@ struct EnhancedRockResultView: View {
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 selectedTab = 1
                                             }
-                                            impactGenerator.impactOccurred(intensity: 0.5)
+                                            HapticManager.shared.selectionChanged()
                                         }
+                                        .enhancedReveal(stage: .tabs(index: 1), isActive: tabsRevealed[1])
                                         
                                         EnhancedTabButton(
                                             title: "Formation",
@@ -204,8 +274,9 @@ struct EnhancedRockResultView: View {
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 selectedTab = 2
                                             }
-                                            impactGenerator.impactOccurred(intensity: 0.5)
+                                            HapticManager.shared.selectionChanged()
                                         }
+                                        .enhancedReveal(stage: .tabs(index: 2), isActive: tabsRevealed[2])
                                         
                                         EnhancedTabButton(
                                             title: "Uses",
@@ -215,11 +286,11 @@ struct EnhancedRockResultView: View {
                                             withAnimation(.easeInOut(duration: 0.3)) {
                                                 selectedTab = 3
                                             }
-                                            impactGenerator.impactOccurred(intensity: 0.5)
+                                            HapticManager.shared.selectionChanged()
                                         }
+                                        .enhancedReveal(stage: .tabs(index: 3), isActive: tabsRevealed[3])
                                     }
                                     .padding(.horizontal)
-                                    .opacity(tabsOpacity)
                                     
                                     // Tab indicator
                                     ZStack(alignment: .leading) {
@@ -234,7 +305,8 @@ struct EnhancedRockResultView: View {
                                             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
                                     }
                                     .padding(.top, 4)
-                                    .opacity(tabsOpacity)
+                                    .opacity(tabsRevealed.allSatisfy { $0 } ? 1 : 0)
+                                        .animation(ResultRevealAnimations.Curves.storytellingFlow, value: tabsRevealed.allSatisfy { $0 })
                                 }
                                 
                                 // Tab content with animation
@@ -262,7 +334,8 @@ struct EnhancedRockResultView: View {
                                 .padding(.horizontal)
                                 .padding(.top, 20)
                                 .padding(.bottom, 30)
-                                .opacity(contentOpacity)
+                                .opacity(tabsRevealed.allSatisfy { $0 } ? 1 : 0)
+                                .animation(ResultRevealAnimations.Curves.storytellingFlow.delay(0.5), value: tabsRevealed.allSatisfy { $0 })
                                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
                                 
                                 Spacer(minLength: 60)
@@ -381,7 +454,7 @@ struct EnhancedRockResultView: View {
                                 .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: -4)
                                 .edgesIgnoringSafeArea(.bottom)
                         )
-                        .opacity(actionsOpacity)
+                        .enhancedReveal(stage: .actions, isActive: actionsRevealed)
                     }
                 }
                 .navigationBarTitleDisplayMode(.inline)
@@ -416,7 +489,7 @@ struct EnhancedRockResultView: View {
                 )
             }
             .onAppear {
-                startRevealAnimation()
+                startEnhancedRevealAnimation()
             }
         }
     }
@@ -431,89 +504,138 @@ struct EnhancedRockResultView: View {
         }
     }
     
-    // A-HA moment reveal animation sequence
-    private func startRevealAnimation() {
-        // Prepare by loading haptic engines
-        impactGenerator.prepare()
-        notificationGenerator.prepare()
+    // Enhanced A-HA moment reveal animation sequence with dramatic storytelling
+    private func startEnhancedRevealAnimation() {
+        // Prepare haptic engines for the journey
+        HapticManager.shared.mediumImpact() // Prepare engines
         
-        // Image reveal
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0.6).delay(imageAnimationDelay)) {
-            imageOpacity = 1.0
-            imageScale = 1.0
-            revealState = .imageRevealed
-        }
-        
-        // First haptic feedback
-        DispatchQueue.main.asyncAfter(deadline: .now() + imageAnimationDelay + 0.2) {
-            impactGenerator.impactOccurred(intensity: 0.5)
-        }
-        
-        // Name reveal
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.6).delay(nameAnimationDelay)) {
-            nameOpacity = 1.0
-            nameScale = 1.0
-            revealState = .nameRevealed
-        }
-        
-        // Second haptic feedback
-        DispatchQueue.main.asyncAfter(deadline: .now() + nameAnimationDelay + 0.1) {
-            impactGenerator.impactOccurred(intensity: 0.6)
-        }
-        
-        // Category reveal with spring animation
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.6, blendDuration: 0.5).delay(categoryAnimationDelay)) {
-            categoryOpacity = 1.0
-            revealState = .categoryRevealed
-        }
-        
-        // Sparkles effect
-        DispatchQueue.main.asyncAfter(deadline: .now() + confettiAnimationDelay) {
-            withAnimation {
-                sparklesActive = true
+        // Stage 1: Image reveal (the specimen appears)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.imageAppearTime) {
+            withAnimation(ResultRevealAnimations.Curves.storytellingFlow) {
+                imageRevealed = true
+                animationStage = .imageAppearing
+                revealState = .imageRevealed
             }
             
-            // Success notification
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                notificationGenerator.notificationOccurred(.success)
+            // Gentle haptic for image appearance
+            HapticManager.shared.lightImpact()
+        }
+        
+        // Stage 2: THE DRAMATIC PAUSE (building anticipation with progress indicator)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.imageAppearTime + timing.imageReveal) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                isDramaticPause = true
+                animationStage = .dramaticPause
             }
             
-            // Hide sparkles after 3 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-                withAnimation {
-                    sparklesActive = false
+            // Animate progress during the pause
+            withAnimation(.linear(duration: timing.dramaticPause)) {
+                pauseProgress = 1.0
+            }
+            
+            // Tension-building haptic
+            HapticManager.shared.mediumImpact()
+        }
+        
+        // Stage 3: Name reveal (the BIG moment) - hide pause indicator
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.nameAppearTime) {
+            withAnimation(ResultRevealAnimations.Curves.dramaticEntrance) {
+                nameRevealed = true
+                animationStage = .nameAppearing
+                revealState = .nameRevealed
+                isDramaticPause = false  // Hide the pause indicator
+            }
+            
+            // Major haptic for the reveal moment
+            HapticManager.shared.heavyImpact()
+        }
+        
+        // Stage 4: Name focus effect (spotlight moment)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.nameAppearTime + timing.nameReveal) {
+            withAnimation(ResultRevealAnimations.Curves.attentionGrab) {
+                isNameFocused = true
+                showNameSpotlight = true
+                animationStage = .nameFocused
+            }
+            
+            // Success celebration haptic
+            HapticManager.shared.successFeedback()
+            
+            // End focus after focus duration
+            DispatchQueue.main.asyncAfter(deadline: .now() + timing.nameFocus) {
+                withAnimation(ResultRevealAnimations.Curves.gentleFade) {
+                    isNameFocused = false
+                    showNameSpotlight = false
                 }
             }
         }
         
-        // Confidence reveal with spring animation
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7, blendDuration: 0.6).delay(confidenceAnimationDelay)) {
-            confidenceOpacity = 1.0
-            revealState = .confidenceRevealed
+        // Stage 5: Sparkles celebration (the magic moment)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.sparklesTime) {
+            withAnimation(ResultRevealAnimations.Curves.bouncyReveal) {
+                isSparklesActive = true
+            }
+            
+            // Sparkles end automatically based on duration
+            DispatchQueue.main.asyncAfter(deadline: .now() + timing.sparklesDuration) {
+                withAnimation(ResultRevealAnimations.Curves.gentleFade) {
+                    isSparklesActive = false
+                }
+            }
         }
         
-        // Tabs reveal with spring animation
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7, blendDuration: 0.5).delay(tabsAnimationDelay)) {
-            tabsOpacity = 1.0
-            revealState = .tabsRevealed
+        // Stage 6: Category reveal (supporting information)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.categoryAppearTime) {
+            withAnimation(ResultRevealAnimations.Curves.storytellingFlow) {
+                categoryRevealed = true
+                revealState = .categoryRevealed
+            }
         }
         
-        // Tab content reveal
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0.6).delay(contentAnimationDelay)) {
-            contentOpacity = 1.0
-            revealState = .contentRevealed
+        // Stage 7: Confidence reveal (validation)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.confidenceAppearTime) {
+            withAnimation(ResultRevealAnimations.Curves.storytellingFlow) {
+                confidenceRevealed = true
+                revealState = .confidenceRevealed
+            }
         }
         
-        // Action buttons reveal
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7, blendDuration: 0.5).delay(actionsAnimationDelay)) {
-            actionsOpacity = 1.0
-            revealState = .complete
+        // Stage 8: Sequential tab reveals (the story unfolds)
+        for i in 0..<4 {
+            let tabDelay = timing.firstTabTime + (Double(i) * timing.tabRevealStagger)
+            DispatchQueue.main.asyncAfter(deadline: .now() + tabDelay) {
+                withAnimation(ResultRevealAnimations.Curves.bouncyReveal) {
+                    tabsRevealed[i] = true
+                }
+                
+                // Subtle haptic for each tab
+                HapticManager.shared.lightImpact()
+                
+                // Update reveal state when all tabs are revealed
+                if i == 3 {
+                    revealState = .tabsRevealed
+                    animationStage = .tabsAppearing
+                }
+            }
         }
         
-        // Additional haptic feedback at completion
-        DispatchQueue.main.asyncAfter(deadline: .now() + actionsAnimationDelay + 0.3) {
-            impactGenerator.impactOccurred(intensity: 0.4)
+        // Stage 9: Actions reveal (final call to action)
+        DispatchQueue.main.asyncAfter(deadline: .now() + timing.actionsStartTime) {
+            withAnimation(ResultRevealAnimations.Curves.storytellingFlow) {
+                actionsRevealed = true
+                revealState = .complete
+                animationStage = .complete
+            }
+            
+            // Final completion haptic
+            HapticManager.shared.successFeedback()
         }
+        
+        // Debug logging for timing optimization (can be removed in production)
+        #if DEBUG
+        print("[Animation] Using timing profile: \(ResultRevealAnimations.currentProfile.rawValue)")
+        print("[Animation] Total sequence duration: \(timing.actionsStartTime + 0.5)s")
+        #endif
     }
 }
 
@@ -1308,108 +1430,7 @@ struct EnhancedPropertyRow: View {
     }
 }
 
-// Sparkles view for the A-HA reveal animation
-struct SparklesView: View {
-    let sparkleCount = 50
-    
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                ForEach(0..<sparkleCount, id: \.self) { index in
-                    let isLarge = index % 10 == 0
-                    
-                    Sparkle(
-                        size: isLarge ? CGFloat.random(in: 15...25) : CGFloat.random(in: 5...15),
-                        position: CGPoint(
-                            x: CGFloat.random(in: 0...geometry.size.width),
-                            y: CGFloat.random(in: 0...geometry.size.height * 0.8)
-                        ),
-                        delay: Double.random(in: 0...2.0),
-                        duration: Double.random(in: 1.0...3.0),
-                        useAlternateIcon: Bool.random(),
-                        color: sparkleColor(for: index)
-                    )
-                }
-            }
-        }
-    }
-    
-    // Generate varied colors for sparkles
-    private func sparkleColor(for index: Int) -> Color {
-        let colors: [Color] = [
-            .yellow,
-            .yellow.opacity(0.8),
-            .orange.opacity(0.9),
-            .white.opacity(0.95),
-            .yellow.opacity(0.7)
-        ]
-        
-        return colors[index % colors.count]
-    }
-}
-
-// Individual sparkle effect
-struct Sparkle: View {
-    let size: CGFloat
-    let position: CGPoint
-    let delay: Double
-    let duration: Double
-    let useAlternateIcon: Bool
-    let color: Color
-    
-    @State private var isAnimating = false
-    @State private var rotation: Double = Double.random(in: 0...360)
-    @State private var scale: CGFloat = 0.1
-    @State private var opacity: Double = 0
-    
-    var body: some View {
-        Group {
-            if useAlternateIcon {
-                Image(systemName: "sparkle")
-                    .font(.system(size: size))
-                    .foregroundColor(color)
-                    .position(position)
-                    .scaleEffect(scale)
-                    .opacity(opacity)
-                    .rotationEffect(.degrees(rotation))
-                    .shadow(color: color.opacity(0.7), radius: 2, x: 0, y: 0)
-                    .onAppear {
-                        withAnimation(Animation.easeOut(duration: 0.2).delay(delay)) {
-                            opacity = 0.9
-                            scale = 1.0
-                        }
-                        
-                        withAnimation(Animation.easeIn(duration: duration).delay(delay + 0.2)) {
-                            opacity = 0
-                            scale = 1.5
-                            rotation += Double.random(in: 180...360)
-                        }
-                    }
-            } else {
-                Image(systemName: Bool.random() ? "star.fill" : "star")
-                    .font(.system(size: size * 0.8))
-                    .foregroundColor(color)
-                    .position(position)
-                    .scaleEffect(scale)
-                    .opacity(opacity)
-                    .rotationEffect(.degrees(rotation))
-                    .shadow(color: color.opacity(0.7), radius: 2, x: 0, y: 0)
-                    .onAppear {
-                        withAnimation(Animation.easeOut(duration: 0.2).delay(delay)) {
-                            opacity = 0.9
-                            scale = 1.0
-                        }
-                        
-                        withAnimation(Animation.easeIn(duration: duration).delay(delay + 0.2)) {
-                            opacity = 0
-                            scale = 1.5
-                            rotation += Double.random(in: 180...360)
-                        }
-                    }
-            }
-        }
-    }
-}
+// Note: Old SparklesView replaced by EnhancedSparklesView in ResultRevealAnimations.swift
 
 struct EnhancedRockResultView_Previews: PreviewProvider {
     static var previews: some View {
