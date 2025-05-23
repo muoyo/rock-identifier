@@ -569,6 +569,40 @@ struct VibrantScaleButtonStyle: ButtonStyle {
     }
 }
 
+/// Enhanced scale button style with configurable intensity
+struct EnhancedScaleButtonStyle: ButtonStyle {
+    let scaleAmount: CGFloat
+    let animationType: AnimationType
+    
+    enum AnimationType {
+        case spring
+        case easeInOut(duration: Double)
+        
+        var animation: Animation {
+            switch self {
+            case .spring:
+                return .spring(response: 0.3, dampingFraction: 0.6)
+            case .easeInOut(let duration):
+                return .easeInOut(duration: duration)
+            }
+        }
+    }
+    
+    init(scaleAmount: CGFloat = 0.95, animationType: AnimationType = .spring) {
+        self.scaleAmount = scaleAmount
+        self.animationType = animationType
+    }
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scaleAmount : 1.0)
+            .animation(animationType.animation, value: configuration.isPressed)
+    }
+}
+
+/// Convenience typealias for backward compatibility
+typealias ScaleButtonStyle = EnhancedScaleButtonStyle
+
 struct VibrantPillButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

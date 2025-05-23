@@ -224,7 +224,7 @@ struct CameraView: View {
                                     .foregroundColor(.white)
                             }
                         }
-                        .buttonStyle(ScaleButtonStyle())
+                        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
                         .sheet(isPresented: $showImagePicker) {
                             PhotoPicker(isPresented: $showImagePicker, selectedImage: $selectedImage, filename: $filename)
                                 .accentColor(.blue)
@@ -329,7 +329,7 @@ struct CameraView: View {
                                     .foregroundColor(.white)
                             }
                         }
-                        .buttonStyle(ScaleButtonStyle())
+                        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 20 + (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0))
@@ -594,15 +594,6 @@ struct RockPositioningGrid: Shape {
                                    width: innerRadius * 2, height: innerRadius * 2))
         
         return path
-    }
-}
-
-// Button styles for camera controls
-struct ScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.92 : 1)
-            .animation(.easeInOut(duration: 0.2), value: configuration.isPressed)
     }
 }
 

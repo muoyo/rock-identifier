@@ -1,11 +1,20 @@
 // Rock Identifier: Crystal ID
 // Muoyo Okome
+// Updated to use enhanced collection view by default
 //
 
 import SwiftUI
 import UIKit
 
+// MARK: - Main Collection View (Now Enhanced)
 struct CollectionView: View {
+    var body: some View {
+        CollectionViewSelector()
+    }
+}
+
+// MARK: - Original Collection View Implementation (Preserved for Reference)
+struct OriginalCollectionView: View {
     @EnvironmentObject var collectionManager: CollectionManager
     @State private var isShowingSortOptions = false
     @State private var showingEmptyState = false
