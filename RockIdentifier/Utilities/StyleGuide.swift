@@ -56,18 +56,37 @@ struct StyleGuide {
     // MARK: - Vibrant Mineral-Inspired Colors
     struct Colors {
         // Primary mineral colors - vibrant and energetic
-        static let amethystPurple = Color(hexString: "9B59B6")
-        static let amethystPurpleDark = Color(hexString: "8E44AD")
-        static let emeraldGreen = Color(hexString: "2ECC71")
-        static let emeraldGreenDark = Color(hexString: "27AE60")
-        static let citrineGold = Color(hexString: "F1C40F")
-        static let citrineGoldDark = Color(hexString: "F39C12")
-        static let sapphireBlue = Color(hexString: "3498DB")
-        static let sapphireBlueDark = Color(hexString: "2980B9")
-        static let roseQuartzPink = Color(hexString: "FF2843")
-        static let roseQuartzPinkLight = Color(hexString: "CC0020")
+        // static let amethystPurple = Color(hexString: "9B59B6")
+        // static let amethystPurpleDark = Color(hexString: "8E44AD")
+        // static let emeraldGreen = Color(hexString: "2ECC71")
+        // static let emeraldGreenDark = Color(hexString: "27AE60")
+        // static let citrineGold = Color(hexString: "F1C40F")
+        // static let citrineGoldDark = Color(hexString: "F39C12")
+        // static let sapphireBlue = Color(hexString: "3498DB")
+        // static let sapphireBlueDark = Color(hexString: "2980B9")
         // static let roseQuartzPink = Color(hexString: "E91E63")
         // static let roseQuartzPinkLight = Color(hexString: "F06292")
+        
+        // More vibrant amethyst purples
+        static let amethystPurple = Color(hexString: "A855F7")        // More electric purple
+        static let amethystPurpleDark = Color(hexString: "7C3AED")    // Deep vibrant purple
+
+        // More vibrant emerald greens
+        static let emeraldGreen = Color(hexString: "10B981")          // Richer emerald
+        static let emeraldGreenDark = Color(hexString: "059669")      // Deep forest emerald
+
+        // More vibrant citrine golds
+        static let citrineGold = Color(hexString: "FBBF24")           // Brighter golden yellow
+        static let citrineGoldDark = Color(hexString: "F59E0B")       // Rich amber gold
+
+        // More vibrant sapphire blues
+        static let sapphireBlue = Color(hexString: "3B82F6")          // Electric sapphire blue
+        static let sapphireBlueDark = Color(hexString: "1D4ED8")      // Deep royal blue
+        
+        // More vibrant ruby reds in lieu of rose quartz
+        static let roseQuartzPink = Color(hexString: "FF2843")
+        static let roseQuartzPinkDark = Color(hexString: "CC0020")
+
         
         // Gradient combinations for magical effects
         static let amethystGradient = LinearGradient(
@@ -95,7 +114,7 @@ struct StyleGuide {
         )
         
         static let roseQuartzGradient = LinearGradient(
-            gradient: Gradient(colors: [roseQuartzPink, roseQuartzPinkLight]),
+            gradient: Gradient(colors: [roseQuartzPink, roseQuartzPinkDark]),
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
