@@ -252,7 +252,7 @@
   - [x] Implement trial expiration handling
   - [x] Create premium feature gates
 
-## Phase 5: Error Handling & Reliability 🔄 MOSTLY COMPLETE
+## Phase 5: Error Handling & Reliability (non-essential for launch) 🔄 MOSTLY COMPLETE
 
 - [x] **Error Detection**
   - [ ] Implement image quality assessment
@@ -280,7 +280,7 @@
 2. Implement basic image quality assessment (blurriness detection) before submission
 3. Add a report misidentification feature for incorrect results
 
-## Phase 6: Performance Optimization 🔄 PARTIALLY IMPLEMENTED
+## Phase 6: Performance Optimization (non-essential for launch) 🔄 PARTIALLY IMPLEMENTED
 
 - [x] **Image Processing**
   - [x] Optimize image resizing for API (implemented in RockIdentificationService)
@@ -318,7 +318,7 @@ Suggested improvements:
 ## Phase 7: Polish & Launch Preparation
 
 - [x] **Visual Polish**
-  - [x ] Refine animations and transitions
+  - [x] Refine animations and transitions
   - [x] Ensure consistent styling throughout app
   - [x] Add haptic feedback at key moments
   - [ ] Optimize for different screen sizes
@@ -328,7 +328,7 @@ Suggested improvements:
   - [x] Refine result reveal timing and sequencing
   - [ ] Improve "Did You Know" fact selection
   - [ ] Create shareable result cards
-  - [ ] Implement confetti effect for first identification
+  - [ ] Implement confetti effect for first identification (shooting stars/shower of stars might be better?)
 
 - [ ] **Analytics Implementation**
   - [ ] Add identification tracking

@@ -64,8 +64,10 @@ struct StyleGuide {
         static let citrineGoldDark = Color(hexString: "F39C12")
         static let sapphireBlue = Color(hexString: "3498DB")
         static let sapphireBlueDark = Color(hexString: "2980B9")
-        static let roseQuartzPink = Color(hexString: "E91E63")
-        static let roseQuartzPinkLight = Color(hexString: "F06292")
+        static let roseQuartzPink = Color(hexString: "FF2843")
+        static let roseQuartzPinkLight = Color(hexString: "CC0020")
+        // static let roseQuartzPink = Color(hexString: "E91E63")
+        // static let roseQuartzPinkLight = Color(hexString: "F06292")
         
         // Gradient combinations for magical effects
         static let amethystGradient = LinearGradient(
