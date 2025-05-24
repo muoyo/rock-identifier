@@ -4,6 +4,7 @@
 
 import SwiftUI
 import RevenueCat
+import AVFoundation
 
 @main
 struct RockIdentifierApp: App {
@@ -18,6 +19,9 @@ struct RockIdentifierApp: App {
     @ObservedObject private var appState = AppState.shared
     
     init() {
+        // Configure audio session to allow mixing with other audio
+        configureAudioSession()
+        
         // Configure RevenueCat
         RevenueCatConfig.configure()
         
@@ -100,6 +104,28 @@ struct RockIdentifierApp: App {
                 PaywallView(isDismissable: false)
                     .environmentObject(subscriptionManager)
             }
+        }
+    }
+    
+    // MARK: - Audio Session Configuration
+    
+    /// Configures the audio session to allow mixing with other audio sources
+    /// This prevents the app from interrupting background music/podcasts when using the camera
+    private func configureAudioSession() {
+        do {
+            let audioSession = AVAudioSession.sharedInstance()
+            
+            // Set the audio session category to allow mixing with other audio
+            // .ambient allows the app to play alongside other audio
+            // .mixWithOthers allows mixing with other apps' audio
+            try audioSession.setCategory(.ambient, options: [.mixWithOthers])
+            
+            // Activate the audio session
+            try audioSession.setActive(true)
+            
+            print("Audio session configured successfully - mixing with other audio enabled")
+        } catch {
+            print("Failed to configure audio session: \(error.localizedDescription)")
         }
     }
 }

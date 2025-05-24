@@ -260,7 +260,7 @@ struct PaywallView: View {
                     )
                 }
             }
-            .frame(width: 270) // Fixed width sized for content
+            .frame(width: 270 ) // Fixed width sized for content
             
             Spacer()
         }
