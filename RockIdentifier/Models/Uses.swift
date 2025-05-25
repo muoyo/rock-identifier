@@ -12,6 +12,13 @@ struct Uses: Codable, Equatable {
     let funFacts: [String]
     let additionalUses: [String: String]?
     
+    // Enhanced fact selection support
+    var enhancedFacts: [EnhancedFact] {
+        return funFacts.map { factText in
+            EnhancedFact(from: factText, rockName: "Unknown")
+        }
+    }
+    
     init(
         industrial: [String]? = nil,
         historical: [String]? = nil,
@@ -26,5 +33,14 @@ struct Uses: Codable, Equatable {
         self.metaphysical = metaphysical
         self.funFacts = funFacts
         self.additionalUses = additionalUses
+    }
+    
+    /// Create enhanced facts for the given rock name and confidence level
+    func enhancedFacts(for rockName: String, confidence: Double) -> [EnhancedFact] {
+        return funFacts.map { factText in
+            EnhancedFact(from: factText, rockName: rockName)
+        }.filter { fact in
+            fact.isAppropriate(for: confidence)
+        }
     }
 }

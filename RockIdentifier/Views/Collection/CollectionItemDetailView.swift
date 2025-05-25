@@ -259,7 +259,7 @@ struct DetailTabsView: View {
                 case 2:
                     EnhancedFormationView(formation: rock.formation)
                 case 3:
-                    EnhancedUsesView(uses: rock.uses)
+                    EnhancedFactDisplayView(uses: rock.uses, rockName: rock.name, confidence: rock.confidence)
                 default:
                     EmptyView()
                 }

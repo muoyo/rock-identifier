@@ -326,7 +326,7 @@ Suggested improvements:
 
 - [ ] **A-HA Moment Enhancement**
   - [x] Refine result reveal timing and sequencing
-  - [ ] Improve "Did You Know" fact selection
+  - [x] Improve "Did You Know" fact selection
   - [ ] Create shareable result cards
   - [ ] Implement confetti effect for first identification (shooting stars/shower of stars might be better?)
 
