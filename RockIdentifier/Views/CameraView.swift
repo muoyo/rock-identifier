@@ -224,7 +224,7 @@ struct CameraView: View {
                                     .foregroundColor(.white)
                             }
                         }
-                        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
+                        .buttonStyle(EnhancedScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
                         .sheet(isPresented: $showImagePicker) {
                             PhotoPicker(isPresented: $showImagePicker, selectedImage: $selectedImage, filename: $filename)
                                 .accentColor(.blue)
@@ -329,7 +329,7 @@ struct CameraView: View {
                                     .foregroundColor(.white)
                             }
                         }
-                        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
+                        .buttonStyle(EnhancedScaleButtonStyle(scaleAmount: 0.92, animationType: .easeInOut(duration: 0.2)))
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 20 + (UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0))

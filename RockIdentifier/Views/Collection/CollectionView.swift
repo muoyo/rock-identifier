@@ -31,78 +31,76 @@ struct OriginalCollectionView: View {
     ]
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Main content
-                VStack(spacing: 0) {
-                    // Filter tabs
-                    filterTabs
-                    
-                    // Search bar
-                    searchBar
-                    
-                    // Collection grid or empty state
-                    if showingEmptyState {
-                        emptyStateView
-                    } else {
-                        collectionGrid
-                    }
-                }
-                .background(Color(.systemBackground))
+        ZStack {
+            // Main content
+            VStack(spacing: 0) {
+                // Filter tabs
+                filterTabs
                 
-                // Edit mode toolbar if active
-                if isEditMode {
-                    editModeToolbar
+                // Search bar
+                searchBar
+                
+                // Collection grid or empty state
+                if showingEmptyState {
+                    emptyStateView
+                } else {
+                    collectionGrid
                 }
             }
-            .navigationTitle("My Collection")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    HStack {
-                        if !collectionManager.collection.isEmpty {
-                            Button(action: {
-                                isEditMode.toggle()
-                                HapticManager.shared.mediumImpact()
-                                if !isEditMode {
-                                    selectedItems.removeAll()
-                                }
-                            }) {
-                                Text(isEditMode ? "Done" : "Select")
+            .background(Color(.systemBackground))
+            
+            // Edit mode toolbar if active
+            if isEditMode {
+                editModeToolbar
+            }
+        }
+        .navigationTitle("My Collection")
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                HStack {
+                    if !collectionManager.collection.isEmpty {
+                        Button(action: {
+                            isEditMode.toggle()
+                            HapticManager.shared.mediumImpact()
+                            if !isEditMode {
+                                selectedItems.removeAll()
                             }
+                        }) {
+                            Text(isEditMode ? "Done" : "Select")
+                        }
+                    }
+                    
+                    Menu {
+                        Button(action: { 
+                            HapticManager.shared.lightImpact()
+                            isShowingSortOptions = true 
+                        }) {
+                            Label("Sort", systemImage: "arrow.up.arrow.down")
                         }
                         
-                        Menu {
-                            Button(action: { 
-                                HapticManager.shared.lightImpact()
-                                isShowingSortOptions = true 
-                            }) {
-                                Label("Sort", systemImage: "arrow.up.arrow.down")
-                            }
-                            
-                            Divider()
-                            
-                            Button(action: {
-                                HapticManager.shared.lightImpact()
-                                showingExportView = true
-                            }) {
-                                Label("Export Collection", systemImage: "square.and.arrow.up")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis.circle")
+                        Divider()
+                        
+                        Button(action: {
+                            HapticManager.shared.lightImpact()
+                            showingExportView = true
+                        }) {
+                            Label("Export Collection", systemImage: "square.and.arrow.up")
                         }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
-            .actionSheet(isPresented: $isShowingSortOptions) {
-                ActionSheet(
-                    title: Text("Sort Collection"),
-                    buttons: SortOrder.allCases.map { order in
-                        .default(Text(order.rawValue)) {
-                            collectionManager.setSortOrder(order)
-                        }
-                    } + [.cancel()]
-                )
-            }
+        }
+        .actionSheet(isPresented: $isShowingSortOptions) {
+            ActionSheet(
+                title: Text("Sort Collection"),
+                buttons: SortOrder.allCases.map { order in
+                    .default(Text(order.rawValue)) {
+                        collectionManager.setSortOrder(order)
+                    }
+                } + [.cancel()]
+            )
         }
         .onAppear {
             checkEmptyState()

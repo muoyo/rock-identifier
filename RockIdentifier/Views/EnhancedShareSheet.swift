@@ -179,7 +179,7 @@ struct EnhancedShareSheet: View {
                         .cornerRadius(12)
                         .disabled(isGenerating)
                     }
-                    .buttonStyle(ScaleButtonStyle())
+                    .buttonStyle(EnhancedScaleButtonStyle())
                     
                     // Cancel button
                     Button("Cancel") {
@@ -191,7 +191,7 @@ struct EnhancedShareSheet: View {
                     .frame(height: 50)
                     .background(Color(.systemGray5))
                     .cornerRadius(12)
-                    .buttonStyle(ScaleButtonStyle())
+                    .buttonStyle(EnhancedScaleButtonStyle())
                 }
             }
             .padding(.horizontal, 20)
@@ -282,7 +282,7 @@ struct CardStyleButton: View {
                     .stroke(isSelected ? styleColor : Color.clear, lineWidth: 2)
             )
         }
-        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.97))
+        .buttonStyle(EnhancedScaleButtonStyle(scaleAmount: 0.97))
     }
     
     private var styleName: String {
@@ -349,7 +349,7 @@ struct ContentOptionButton: View {
                     .fill(isSelected ? StyleGuide.Colors.roseQuartzPink : Color(.systemGray6))
             )
         }
-        .buttonStyle(ScaleButtonStyle(scaleAmount: 0.97))
+        .buttonStyle(EnhancedScaleButtonStyle(scaleAmount: 0.97))
     }
 }
 

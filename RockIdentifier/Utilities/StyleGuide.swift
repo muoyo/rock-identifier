@@ -621,9 +621,6 @@ struct EnhancedScaleButtonStyle: ButtonStyle {
     }
 }
 
-/// Convenience typealias for backward compatibility
-typealias ScaleButtonStyle = EnhancedScaleButtonStyle
-
 struct VibrantPillButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

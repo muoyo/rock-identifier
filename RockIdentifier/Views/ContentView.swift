@@ -254,15 +254,17 @@ struct CollectionListView: View {
     var collectionManager: CollectionManager
     
     var body: some View {
-        CollectionView()
-            .environmentObject(collectionManager)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        isPresented = false
+        NavigationView {
+            CollectionView()
+                .environmentObject(collectionManager)
+                .toolbar {
+                    ToolbarItem(placement: .navigationBarTrailing) {
+                        Button("Done") {
+                            isPresented = false
+                        }
                     }
                 }
-            }
+        }
     }
 }
 

@@ -29,60 +29,58 @@ struct EnhancedCollectionView: View {
     ]
     
     var body: some View {
-        NavigationView {
-            ZStack {
-                // Enhanced background with subtle gradient
-                backgroundGradient
+        ZStack {
+            // Enhanced background with subtle gradient
+            backgroundGradient
+            
+            // Main content with staggered animations
+            VStack(spacing: 0) {
+                // Enhanced filter tabs
+                enhancedFilterTabs
+                    .offset(y: filterTabsOffset)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1), value: filterTabsOffset)
                 
-                // Main content with staggered animations
-                VStack(spacing: 0) {
-                    // Enhanced filter tabs
-                    enhancedFilterTabs
-                        .offset(y: filterTabsOffset)
-                        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.1), value: filterTabsOffset)
-                    
-                    // Enhanced search bar
-                    enhancedSearchBar
-                        .offset(y: searchBarOffset)
-                        .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: searchBarOffset)
-                    
-                    // Collection content
-                    if showingEmptyState {
-                        EnhancedCollectionEmptyState {
-                            // Navigate to camera - this would be handled by the parent
-                            // For now, just provide haptic feedback
-                            HapticManager.shared.mediumImpact()
-                        }
-                        .transition(.asymmetric(
-                            insertion: .scale.combined(with: .opacity),
-                            removal: .scale.combined(with: .opacity)
-                        ))
-                    } else {
-                        enhancedCollectionGrid
-                            .opacity(gridAnimated ? 1.0 : 0.0)
-                            .animation(.easeOut(duration: 0.8).delay(0.3), value: gridAnimated)
+                // Enhanced search bar
+                enhancedSearchBar
+                    .offset(y: searchBarOffset)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.2), value: searchBarOffset)
+                
+                // Collection content
+                if showingEmptyState {
+                    EnhancedCollectionEmptyState {
+                        // Navigate to camera - this would be handled by the parent
+                        // For now, just provide haptic feedback
+                        HapticManager.shared.mediumImpact()
                     }
-                }
-                
-                // Enhanced edit mode toolbar
-                if isEditMode {
-                    enhancedEditModeToolbar
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                        .opacity(toolbarAnimated ? 1.0 : 0.0)
-                        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: toolbarAnimated)
-                }
-            }
-            .navigationTitle("My Collection")
-            .offset(y: headerOffset)
-            .animation(.spring(response: 0.6, dampingFraction: 0.8), value: headerOffset)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    enhancedToolbarButtons
+                    .transition(.asymmetric(
+                        insertion: .scale.combined(with: .opacity),
+                        removal: .scale.combined(with: .opacity)
+                    ))
+                } else {
+                    enhancedCollectionGrid
+                        .opacity(gridAnimated ? 1.0 : 0.0)
+                        .animation(.easeOut(duration: 0.8).delay(0.3), value: gridAnimated)
                 }
             }
-            .actionSheet(isPresented: $isShowingSortOptions) {
-                sortActionSheet
+            
+            // Enhanced edit mode toolbar
+            if isEditMode {
+                enhancedEditModeToolbar
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .opacity(toolbarAnimated ? 1.0 : 0.0)
+                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: toolbarAnimated)
             }
+        }
+        .navigationTitle("My Collection")
+        .offset(y: headerOffset)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: headerOffset)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                enhancedToolbarButtons
+            }
+        }
+        .actionSheet(isPresented: $isShowingSortOptions) {
+            sortActionSheet
         }
         .onAppear {
             animateEntrance()
@@ -169,7 +167,7 @@ struct EnhancedCollectionView: View {
                                 .white : .primary
                             )
                     }
-                    .buttonStyle(ScaleButtonStyle())
+                    .buttonStyle(EnhancedScaleButtonStyle())
                 }
             }
             .padding(.horizontal, 20)
@@ -279,7 +277,7 @@ struct EnhancedCollectionView: View {
                     )
                     .foregroundColor(isEditMode ? .white : StyleGuide.Colors.amethystPurple)
                 }
-                .buttonStyle(ScaleButtonStyle())
+                .buttonStyle(EnhancedScaleButtonStyle())
             }
             
             Menu {
@@ -289,7 +287,7 @@ struct EnhancedCollectionView: View {
                     .font(.system(size: 20))
                     .foregroundColor(StyleGuide.Colors.amethystPurple)
             }
-            .buttonStyle(ScaleButtonStyle())
+            .buttonStyle(EnhancedScaleButtonStyle())
         }
     }
     
@@ -390,7 +388,7 @@ struct EnhancedCollectionView: View {
                     .foregroundColor(isDestructive ? .red.opacity(0.9) : .white)
             }
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(EnhancedScaleButtonStyle())
     }
     
     // MARK: - Sort Action Sheet

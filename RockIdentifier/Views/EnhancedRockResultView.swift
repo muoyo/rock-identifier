@@ -382,7 +382,7 @@ struct EnhancedRockResultView: View {
                                     .cornerRadius(12)
                                     .shadow(color: (addedToCollection ? Color.green : Color.blue).opacity(0.3), radius: 4, x: 0, y: 2)
                                 }
-                                .buttonStyle(ScaleButtonStyle())
+                                .buttonStyle(EnhancedScaleButtonStyle())
                                 
                                 // Share buttons row
                                 HStack(spacing: 12) {
@@ -406,7 +406,7 @@ struct EnhancedRockResultView: View {
                                         .cornerRadius(10)
                                         .shadow(color: StyleGuide.Colors.emeraldGreen.opacity(0.3), radius: 4, x: 0, y: 2)
                                     }
-                                    .buttonStyle(ScaleButtonStyle())
+                                    .buttonStyle(EnhancedScaleButtonStyle())
                                     .sheet(isPresented: $showEnhancedShareSheet) {
                                         EnhancedShareSheet(result: result, isPresented: $showEnhancedShareSheet)
                                     }
@@ -430,7 +430,7 @@ struct EnhancedRockResultView: View {
                                         .foregroundColor(.primary)
                                         .cornerRadius(10)
                                     }
-                                    .buttonStyle(ScaleButtonStyle())
+                                    .buttonStyle(EnhancedScaleButtonStyle())
                                     .sheet(isPresented: $showShareSheet) {
                                         if let image = result.image {
                                             ShareSheet(items: [
@@ -1166,49 +1166,105 @@ struct EnhancedFormationView: View {
 
 
 
-// Enhanced property row component
+// Enhanced property row with beautiful styling and icon colors
 struct EnhancedPropertyRow: View {
     let label: String
     let value: String
     let iconName: String
     let showDivider: Bool
     
+    @State private var hasAnimated = false
     @State private var shine = false
     @State private var opacity: Double = 0
     
+    // Color selection based on icon for beautiful theming
+    private var iconColor: Color {
+        switch iconName {
+        case "circle.fill":
+            return StyleGuide.Colors.amethystPurple
+        case "hammer":
+            return StyleGuide.Colors.emeraldGreen
+        case "sparkles":
+            return StyleGuide.Colors.citrineGold
+        case "scribble":
+            return StyleGuide.Colors.roseQuartzPink
+        case "eye":
+            return StyleGuide.Colors.sapphireBlue
+        case "cube":
+            return StyleGuide.Colors.amethystPurple
+        case "scissors":
+            return StyleGuide.Colors.emeraldGreen
+        case "bolt.fill":
+            return StyleGuide.Colors.citrineGold
+        case "scalemass":
+            return StyleGuide.Colors.roseQuartzPink
+        case "doc.plaintext":
+            return StyleGuide.Colors.sapphireBlue
+        case "square.stack.3d.up":
+            return StyleGuide.Colors.roseQuartzPink
+        case "globe":
+            return StyleGuide.Colors.emeraldGreen
+        case "clock":
+            return StyleGuide.Colors.sapphireBlue
+        case "arrow.triangle.merge":
+            return StyleGuide.Colors.amethystPurple
+        case "atom":
+            return StyleGuide.Colors.emeraldGreen
+        case "ruler":
+            return StyleGuide.Colors.sapphireBlue
+        case "mountain.2":
+            return StyleGuide.Colors.citrineGold
+        default:
+            return StyleGuide.Colors.amethystPurple
+        }
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             // Property content
-            HStack(alignment: .center, spacing: 12) {
-                // Icon with pulse effect
+            HStack(alignment: .top, spacing: 14) {
+                // Enhanced icon with subtle animation
                 ZStack {
                     Circle()
-                        .fill(Color.blue.opacity(0.1))
-                        .frame(width: 32, height: 32)
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 36, height: 36)
                     
-                    // Shine effect
+                    // Subtle pulse ring
+                    Circle()
+                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
+                        .frame(width: 34, height: 34)
+                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
+                        .opacity(hasAnimated ? 0.0 : 1.0)
+                        .animation(
+                            Animation.easeOut(duration: 1.0).delay(0.3),
+                            value: hasAnimated
+                        )
+                    
+                    // Shine effect overlay
                     Circle()
                         .trim(from: 0.0, to: 0.2)
-                        .stroke(Color.white.opacity(shine ? 0.0 : 0.5), lineWidth: 2)
+                        .stroke(Color.white.opacity(shine ? 0.0 : 0.6), lineWidth: 2)
                         .frame(width: 30, height: 30)
                         .rotationEffect(Angle(degrees: shine ? 360 : 0))
                         .animation(Animation.linear(duration: 1.2).delay(0.5).repeatCount(1, autoreverses: false),
                                    value: shine)
                     
-                    // Icon
                     Image(systemName: iconName)
-                        .foregroundColor(.blue)
-                        .frame(width: 24, height: 24)
+                        .foregroundColor(iconColor)
+                        .font(.system(size: 16, weight: .medium))
                 }
                 
-                // Label and value
-                VStack(alignment: .leading, spacing: 2) {
+                // Label and value with improved typography
+                VStack(alignment: .leading, spacing: 4) {
                     Text(label)
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .fontWeight(.semibold)
                     
                     Text(value)
-                        .font(.system(size: 16))
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
@@ -1217,17 +1273,27 @@ struct EnhancedPropertyRow: View {
             .animation(.easeInOut(duration: 0.6), value: opacity)
             .onAppear {
                 // Fade in with slight delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     opacity = 1.0
+                    hasAnimated = true
                     shine = true
                 }
             }
             
-            // Optional divider
+            // Enhanced divider with gradient
             if showDivider {
-                Divider()
-                    .padding(.leading, 36)
-                    .padding(.top, 8)
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.clear,
+                        iconColor.opacity(0.3),
+                        Color.clear
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .frame(height: 1)
+                .padding(.leading, 44)
+                .padding(.top, 8)
             }
         }
     }

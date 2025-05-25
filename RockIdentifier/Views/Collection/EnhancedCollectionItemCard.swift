@@ -59,11 +59,13 @@ struct EnhancedCollectionItemCard: View {
             .onAppear {
                 animateEntrance()
             }
-            .onTapGesture {
-                if !isEditMode {
-                    HapticManager.shared.lightImpact()
+            .simultaneousGesture(
+                TapGesture().onEnded { _ in
+                    if !isEditMode {
+                        HapticManager.shared.lightImpact()
+                    }
                 }
-            }
+            )
             .contextMenu {
                 contextMenuItems
             }

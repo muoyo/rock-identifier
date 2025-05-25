@@ -125,7 +125,7 @@ struct EnhancedCollectionEmptyState: View {
             }
             .scaleEffect(buttonScale)
             .animation(.spring(response: 0.6, dampingFraction: 0.8).delay(0.5), value: buttonScale)
-            .buttonStyle(ScaleButtonStyle())
+            .buttonStyle(EnhancedScaleButtonStyle())
             
             Spacer()
         }

@@ -87,11 +87,6 @@ struct EnhancedFactDisplayView: View {
             }
             
             Spacer()
-            
-            // Quality indicator
-            if !factManager.availableFacts.isEmpty {
-                QualityIndicatorView(statistics: factManager.getFactStatistics())
-            }
         }
     }
     
@@ -540,36 +535,7 @@ struct StatPill: View {
     }
 }
 
-struct QualityIndicatorView: View {
-    let statistics: FactStatistics
-    
-    var body: some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            HStack(spacing: 4) {
-                ForEach(0..<qualityStars, id: \.self) { _ in
-                    Image(systemName: "star.fill")
-                        .font(.caption2)
-                        .foregroundColor(.yellow)
-                }
-                
-                ForEach(0..<(5-qualityStars), id: \.self) { _ in
-                    Image(systemName: "star")
-                        .font(.caption2)
-                        .foregroundColor(.gray.opacity(0.3))
-                }
-            }
-            
-            Text("Quality")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-    }
-    
-    private var qualityStars: Int {
-        let score = statistics.qualityScore
-        return max(1, min(5, Int(score)))
-    }
-}
+
 
 // MARK: - Preview
 

@@ -69,48 +69,30 @@ struct CollectionItemDetailView: View {
                 DetailTabsView(rock: rock)
                     .padding(.top)
                 
-                // Notes section
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Notes")
-                        .font(.headline)
-                    
-                    if isEditMode {
-                        TextEditor(text: $editedNotes)
-                            .padding(8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                            .frame(minHeight: 100)
-                    } else {
-                        Text(rock.notes ?? "No notes yet. Tap Edit to add notes.")
-                            .foregroundColor(rock.notes == nil ? .secondary : .primary)
-                            .padding(8)
-                            .frame(minHeight: 60, alignment: .topLeading)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                    }
-                }
+                // Enhanced Notes section
+                EnhancedNotesSection(
+                    title: "Notes",
+                    content: rock.notes,
+                    placeholder: "No notes yet. Tap Edit to add notes.",
+                    isEditMode: isEditMode,
+                    editedText: $editedNotes,
+                    iconName: "note.text",
+                    iconColor: StyleGuide.Colors.amethystPurple
+                )
                 .padding(.horizontal)
                 .padding(.top)
                 
-                // Location section
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Location Found")
-                        .font(.headline)
-                    
-                    if isEditMode {
-                        TextField("Where was this found?", text: $editedLocation)
-                            .padding(8)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                    } else {
-                        Text(rock.location ?? "No location information")
-                            .foregroundColor(rock.location == nil ? .secondary : .primary)
-                            .padding(8)
-                            .frame(minHeight: 40, alignment: .topLeading)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                    }
-                }
+                // Enhanced Location section
+                EnhancedLocationSection(
+                    title: "Location Found",
+                    content: rock.location,
+                    placeholder: "No location information",
+                    textFieldPlaceholder: "Where was this found?",
+                    isEditMode: isEditMode,
+                    editedText: $editedLocation,
+                    iconName: "location",
+                    iconColor: StyleGuide.Colors.emeraldGreen
+                )
                 .padding(.horizontal)
                 .padding(.top)
             }
@@ -253,11 +235,11 @@ struct DetailTabsView: View {
             VStack(alignment: .leading, spacing: 16) {
                 switch selectedTab {
                 case 0:
-                    EnhancedPhysicalPropertiesView(properties: rock.physicalProperties)
+                    PhysicalPropertiesContentView(properties: rock.physicalProperties)
                 case 1:
-                    EnhancedChemicalPropertiesView(properties: rock.chemicalProperties)
+                    ChemicalPropertiesContentView(properties: rock.chemicalProperties)
                 case 2:
-                    EnhancedFormationView(formation: rock.formation)
+                    FormationContentView(formation: rock.formation)
                 case 3:
                     EnhancedFactDisplayView(uses: rock.uses, rockName: rock.name, confidence: rock.confidence)
                 default:
@@ -311,6 +293,563 @@ struct ConfidenceBar: View {
             Text("\(Int(confidence * 100))%")
                 .font(.caption)
                 .foregroundColor(color)
+        }
+    }
+}
+
+// MARK: - Property Content Views
+
+struct PhysicalPropertiesContentView: View {
+    let properties: PhysicalProperties
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with icon
+            HStack {
+                Text("Physical Properties")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Image(systemName: "ruler")
+                    .font(.title3)
+                    .foregroundColor(StyleGuide.Colors.sapphireBlue)
+            }
+            .padding(.bottom, 4)
+            
+            // Main properties section
+            VStack(spacing: 16) {
+                // Color with enhanced styling
+                EnhancedPropertyRow(
+                    label: "Color",
+                    value: properties.color,
+                    iconName: "circle.fill",
+                    showDivider: true
+                )
+                
+                // Hardness with Mohs scale context
+                EnhancedPropertyRow(
+                    label: "Hardness",
+                    value: properties.hardness,
+                    iconName: "hammer",
+                    showDivider: true
+                )
+                
+                // Luster property
+                EnhancedPropertyRow(
+                    label: "Luster",
+                    value: properties.luster,
+                    iconName: "sparkles",
+                    showDivider: true
+                )
+                
+                // Optional properties
+                Group {
+                    if let streak = properties.streak {
+                        EnhancedPropertyRow(
+                            label: "Streak",
+                            value: streak,
+                            iconName: "scribble",
+                            showDivider: true
+                        )
+                    }
+                    
+                    if let transparency = properties.transparency {
+                        EnhancedPropertyRow(
+                            label: "Transparency",
+                            value: transparency,
+                            iconName: "eye",
+                            showDivider: true
+                        )
+                    }
+                    
+                    if let crystalSystem = properties.crystalSystem {
+                        EnhancedPropertyRow(
+                            label: "Crystal System",
+                            value: crystalSystem,
+                            iconName: "cube",
+                            showDivider: true
+                        )
+                    }
+                    
+                    if let cleavage = properties.cleavage {
+                        EnhancedPropertyRow(
+                            label: "Cleavage",
+                            value: cleavage,
+                            iconName: "scissors",
+                            showDivider: true
+                        )
+                    }
+                    
+                    if let fracture = properties.fracture {
+                        EnhancedPropertyRow(
+                            label: "Fracture",
+                            value: fracture,
+                            iconName: "bolt.fill",
+                            showDivider: true
+                        )
+                    }
+                    
+                    if let specificGravity = properties.specificGravity {
+                        EnhancedPropertyRow(
+                            label: "Specific Gravity",
+                            value: specificGravity,
+                            iconName: "scalemass",
+                            showDivider: false
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct ChemicalPropertiesContentView: View {
+    let properties: ChemicalProperties
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with icon
+            HStack {
+                Text("Chemical Properties")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Image(systemName: "atom")
+                    .font(.title3)
+                    .foregroundColor(StyleGuide.Colors.emeraldGreen)
+            }
+            .padding(.bottom, 4)
+            
+            // Formula section with special styling
+            if let formula = properties.formula {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Chemical Formula")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .fontWeight(.medium)
+                    
+                    Text(formula)
+                        .font(.system(size: 22, weight: .medium, design: .monospaced))
+                        .foregroundColor(StyleGuide.Colors.emeraldGreen)
+                        .padding(.vertical, 12)
+                        .padding(.horizontal, 16)
+                        .background(
+                            RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                .fill(StyleGuide.Colors.emeraldGreen.opacity(0.1))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                        .stroke(StyleGuide.Colors.emeraldGreen.opacity(0.2), lineWidth: 1)
+                                )
+                        )
+                }
+                .padding(.bottom, 6)
+            }
+            
+            // Composition
+            EnhancedPropertyRow(
+                label: "Composition",
+                value: properties.composition,
+                iconName: "doc.plaintext",
+                showDivider: true
+            )
+            
+            // Elements section with enhanced cards
+            if let elements = properties.elements, !elements.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Elements")
+                        .font(.headline)
+                        .padding(.top, 8)
+                    
+                    ForEach(elements, id: \.symbol) { element in
+                        HStack(alignment: .center, spacing: 14) {
+                            // Element symbol in a styled circle
+                            ZStack {
+                                Circle()
+                                    .fill(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                StyleGuide.Colors.amethystPurple.opacity(0.8),
+                                                StyleGuide.Colors.sapphireBlue.opacity(0.8)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
+                                    .frame(width: 44, height: 44)
+                                
+                                Text(element.symbol)
+                                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                                    .foregroundColor(.white)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(element.name)
+                                    .font(.system(size: 16, weight: .medium))
+                                
+                                if let percentage = element.percentage {
+                                    HStack(spacing: 8) {
+                                        Text("\(String(format: "%.1f", percentage))%")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(StyleGuide.Colors.emeraldGreen)
+                                        
+                                        // Percentage bar
+                                        GeometryReader { geometry in
+                                            ZStack(alignment: .leading) {
+                                                Rectangle()
+                                                    .fill(Color.gray.opacity(0.2))
+                                                    .frame(height: 4)
+                                                    .cornerRadius(2)
+                                                
+                                                Rectangle()
+                                                    .fill(StyleGuide.Colors.emeraldGreen)
+                                                    .frame(
+                                                        width: max(0, min(percentage, 100)) * geometry.size.width / 100,
+                                                        height: 4
+                                                    )
+                                                    .cornerRadius(2)
+                                            }
+                                        }
+                                        .frame(height: 4)
+                                    }
+                                }
+                            }
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 14)
+                        .background(
+                            RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                .fill(Color(.systemGray6))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                        .stroke(StyleGuide.Colors.amethystPurple.opacity(0.1), lineWidth: 1)
+                                )
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct FormationContentView: View {
+    let formation: Formation
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Header with icon
+            HStack {
+                Text("Formation")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                
+                Spacer()
+                
+                Image(systemName: "mountain.2")
+                    .font(.title3)
+                    .foregroundColor(StyleGuide.Colors.citrineGold)
+            }
+            .padding(.bottom, 4)
+            
+            // Formation properties
+            VStack(spacing: 16) {
+                EnhancedPropertyRow(
+                    label: "Type",
+                    value: formation.formationType,
+                    iconName: "square.stack.3d.up",
+                    showDivider: true
+                )
+                
+                EnhancedPropertyRow(
+                    label: "Environment",
+                    value: formation.environment,
+                    iconName: "globe",
+                    showDivider: true
+                )
+                
+                if let geologicalAge = formation.geologicalAge {
+                    EnhancedPropertyRow(
+                        label: "Geological Age",
+                        value: geologicalAge,
+                        iconName: "clock",
+                        showDivider: true
+                    )
+                }
+                
+                EnhancedPropertyRow(
+                    label: "Formation Process",
+                    value: formation.formationProcess,
+                    iconName: "arrow.triangle.merge",
+                    showDivider: false
+                )
+            }
+            
+            // Common locations with enhanced styling
+            if let locations = formation.commonLocations, !locations.isEmpty {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Common Locations")
+                        .font(.headline)
+                        .padding(.top, 8)
+                    
+                    // Enhanced location cards
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(locations, id: \.self) { location in
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(StyleGuide.Colors.roseQuartzPink.opacity(0.15))
+                                        .frame(width: 32, height: 32)
+                                    
+                                    Image(systemName: "mappin.circle.fill")
+                                        .foregroundColor(StyleGuide.Colors.roseQuartzPink)
+                                        .font(.system(size: 16))
+                                }
+                                
+                                Text(location)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.small)
+                                    .fill(StyleGuide.Colors.roseQuartzPink.opacity(0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.small)
+                                            .stroke(StyleGuide.Colors.roseQuartzPink.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Enhanced Notes & Location Components
+
+struct EnhancedNotesSection: View {
+    let title: String
+    let content: String?
+    let placeholder: String
+    let isEditMode: Bool
+    @Binding var editedText: String
+    let iconName: String
+    let iconColor: Color
+    
+    @State private var hasAnimated = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Enhanced header with icon
+            HStack(spacing: 12) {
+                // Beautiful icon with animation
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    
+                    // Subtle pulse ring
+                    Circle()
+                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
+                        .frame(width: 30, height: 30)
+                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
+                        .opacity(hasAnimated ? 0.0 : 1.0)
+                        .animation(
+                            Animation.easeOut(duration: 1.0).delay(0.2),
+                            value: hasAnimated
+                        )
+                    
+                    Image(systemName: iconName)
+                        .foregroundColor(iconColor)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            // Enhanced content area
+            if isEditMode {
+                TextEditor(text: $editedText)
+                    .font(.subheadline)
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                            .fill(Color(.systemGray6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                    .stroke(iconColor.opacity(0.3), lineWidth: 1.5)
+                            )
+                    )
+                    .frame(minHeight: 100)
+            } else {
+                Text(content ?? placeholder)
+                    .font(.subheadline)
+                    .foregroundColor(content == nil ? .secondary : .primary)
+                    .padding(16)
+                    .frame(maxWidth: .infinity, minHeight: 60, alignment: .topLeading)
+                    .background(
+                        RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                            .fill(
+                                LinearGradient(
+                                    gradient: Gradient(colors: [
+                                        Color(.systemBackground),
+                                        iconColor.opacity(0.02)
+                                    ]),
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                    .stroke(
+                                        LinearGradient(
+                                            gradient: Gradient(colors: [
+                                                iconColor.opacity(0.2),
+                                                iconColor.opacity(0.1)
+                                            ]),
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        ),
+                                        lineWidth: 1
+                                    )
+                            )
+                    )
+                    .shadow(color: iconColor.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                hasAnimated = true
+            }
+        }
+    }
+}
+
+struct EnhancedLocationSection: View {
+    let title: String
+    let content: String?
+    let placeholder: String
+    let textFieldPlaceholder: String
+    let isEditMode: Bool
+    @Binding var editedText: String
+    let iconName: String
+    let iconColor: Color
+    
+    @State private var hasAnimated = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Enhanced header with icon
+            HStack(spacing: 12) {
+                // Beautiful icon with animation
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    
+                    // Subtle pulse ring
+                    Circle()
+                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
+                        .frame(width: 30, height: 30)
+                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
+                        .opacity(hasAnimated ? 0.0 : 1.0)
+                        .animation(
+                            Animation.easeOut(duration: 1.0).delay(0.3),
+                            value: hasAnimated
+                        )
+                    
+                    Image(systemName: iconName)
+                        .foregroundColor(iconColor)
+                        .font(.system(size: 14, weight: .medium))
+                }
+                
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+            }
+            
+            // Enhanced content area
+            if isEditMode {
+                TextField(textFieldPlaceholder, text: $editedText)
+                    .font(.subheadline)
+                    .padding(16)
+                    .background(
+                        RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                            .fill(Color(.systemGray6))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                    .stroke(iconColor.opacity(0.3), lineWidth: 1.5)
+                            )
+                    )
+            } else {
+                HStack(spacing: 12) {
+                    // Location pin icon for visual context
+                    if content != nil {
+                        Image(systemName: "mappin.circle.fill")
+                            .foregroundColor(iconColor.opacity(0.6))
+                            .font(.system(size: 16))
+                    }
+                    
+                    Text(content ?? placeholder)
+                        .font(.subheadline)
+                        .foregroundColor(content == nil ? .secondary : .primary)
+                    
+                    Spacer()
+                }
+                .padding(16)
+                .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                        .fill(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    Color(.systemBackground),
+                                    iconColor.opacity(0.02)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                                .stroke(
+                                    LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            iconColor.opacity(0.2),
+                                            iconColor.opacity(0.1)
+                                        ]),
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 1
+                                )
+                        )
+                )
+                .shadow(color: iconColor.opacity(0.1), radius: 2, x: 0, y: 1)
+            }
+        }
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                hasAnimated = true
+            }
         }
     }
 }
