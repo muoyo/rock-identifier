@@ -390,7 +390,7 @@ struct PaywallView: View {
             enhancedBottomLink(text: "Restore", action: restorePurchases)
             
             Circle()
-                .fill(StyleGuide.Colors.amethystPurple.opacity(0.3))
+                .fill(StyleGuide.Colors.amethystPurple.opacity(0.4))
                 .frame(width: 4, height: 4)
             
             enhancedBottomLink(text: "Terms", action: showTerms)
@@ -678,10 +678,11 @@ struct PaywallView: View {
                     } else if isTrial && showTrial {
                         HStack(spacing: 6) {
                             Text("FREE")
-                                .textStyle(.headlineMedium)
-                                .foregroundColor(StyleGuide.Colors.roseQuartzPink)
+                                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .foregroundColor(.primary)
                             
                             Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 20, weight: .bold))
                                 .foregroundColor(StyleGuide.Colors.roseQuartzPink)
                         }
                     }
@@ -764,9 +765,9 @@ struct PaywallView: View {
         "Build your personal collection library"
     ]
     private let benefitColors = [
-        Color.roseQuartzPink,
-        Color.roseQuartzPink,
-        Color.roseQuartzPink
+        StyleGuide.Colors.roseQuartzPink,      // "Unlimited" - trust and reliability
+        StyleGuide.Colors.roseQuartzPink,      // "Discover" - trust and reliability
+        StyleGuide.Colors.roseQuartzPink       // "Collection" - trust and reliability
     ]
     
     // MARK: - Animation Functions
