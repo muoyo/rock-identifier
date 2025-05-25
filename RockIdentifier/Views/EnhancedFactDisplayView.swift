@@ -258,35 +258,137 @@ struct EnhancedFactDisplayView: View {
     }
 }
 
-// MARK: - Traditional Use Section
+// MARK: - Enhanced Traditional Use Section with colorful styling
 
 struct TraditionalUseSection: View {
     let title: String
     let items: [String]
     let icon: String
     
+    @State private var hasAnimated = false
+    
+    // Dynamic color selection based on icon type
+    private var iconColor: Color {
+        switch icon {
+        case "scroll":
+            return StyleGuide.Colors.citrineGold
+        case "gear":
+            return StyleGuide.Colors.sapphireBlue
+        case "sparkles":
+            return StyleGuide.Colors.amethystPurple
+        case "star.circle":
+            return StyleGuide.Colors.roseQuartzPink
+        default:
+            return StyleGuide.Colors.emeraldGreen
+        }
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(.secondary)
-                    .font(.subheadline)
+        VStack(alignment: .leading, spacing: 12) {
+            // Enhanced header with beautiful icon
+            HStack(spacing: 12) {
+                // Beautiful animated icon
+                ZStack {
+                    Circle()
+                        .fill(iconColor.opacity(0.12))
+                        .frame(width: 32, height: 32)
+                    
+                    // Subtle pulse ring
+                    Circle()
+                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
+                        .frame(width: 30, height: 30)
+                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
+                        .opacity(hasAnimated ? 0.0 : 1.0)
+                        .animation(
+                            Animation.easeOut(duration: 1.0).delay(0.4),
+                            value: hasAnimated
+                        )
+                    
+                    // Shine effect overlay
+                    Circle()
+                        .trim(from: 0.0, to: 0.2)
+                        .stroke(Color.white.opacity(hasAnimated ? 0.0 : 0.6), lineWidth: 2)
+                        .frame(width: 28, height: 28)
+                        .rotationEffect(Angle(degrees: hasAnimated ? 360 : 0))
+                        .animation(Animation.linear(duration: 1.2).delay(0.6).repeatCount(1, autoreverses: false),
+                                   value: hasAnimated)
+                    
+                    Image(systemName: icon)
+                        .foregroundColor(iconColor)
+                        .font(.system(size: 14, weight: .medium))
+                }
                 
                 Text(title)
                     .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Spacer()
             }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                ForEach(items, id: \.self) { item in
-                    Text("• \(item)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                    hasAnimated = true
                 }
             }
-            .padding(.leading, 20)
+            
+            // Enhanced content list
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(items, id: \.self) { item in
+                    HStack(alignment: .top, spacing: 12) {
+                        // Beautiful bullet point
+                        ZStack {
+                            Circle()
+                                .fill(iconColor.opacity(0.2))
+                                .frame(width: 6, height: 6)
+                            
+                            Circle()
+                                .fill(iconColor)
+                                .frame(width: 4, height: 4)
+                        }
+                        .padding(.top, 6)
+                        
+                        Text(item)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        Spacer()
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .padding(.leading, 8)
         }
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color(.systemBackground),
+                            iconColor.opacity(0.02)
+                        ]),
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
+                        .stroke(
+                            LinearGradient(
+                                gradient: Gradient(colors: [
+                                    iconColor.opacity(0.2),
+                                    iconColor.opacity(0.1)
+                                ]),
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .shadow(color: iconColor.opacity(0.08), radius: 2, x: 0, y: 1)
     }
 }
 

@@ -13,6 +13,7 @@ struct DeveloperSettingsView: View {
     @State private var showPaywall = false
     @State private var isHardPaywall = false
     @State private var showAnimationDemo = false
+    @State private var showStylingComparison = false
     
     var body: some View {
         NavigationView {
@@ -25,6 +26,24 @@ struct DeveloperSettingsView: View {
                             .foregroundColor(.green)
                             .fontWeight(.medium)
                     }
+                }
+                
+                Section(header: Text("UI Testing")) {
+                    Button(action: {
+                        showStylingComparison = true
+                    }) {
+                        HStack {
+                            Text("Icon Styling Comparison")
+                            Spacer()
+                            Image(systemName: "paintbrush.pointed.fill")
+                                .foregroundColor(.purple)
+                        }
+                    }
+                    
+                    Text("Compare colorful vs grey icon styling approaches")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.leading)
                 }
                 Section(header: Text("Paywall Testing")) {
                     Button(action: {
@@ -242,6 +261,9 @@ struct DeveloperSettingsView: View {
             }
             .sheet(isPresented: $showAnimationDemo) {
                 AnimationDemoView()
+            }
+            .sheet(isPresented: $showStylingComparison) {
+                StylingComparisonView()
             }
         }
     }
