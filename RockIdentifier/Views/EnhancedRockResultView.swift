@@ -311,33 +311,30 @@ struct EnhancedRockResultView: View {
                                 }
                                 
                                 // Tab content with animation
-                                ZStack {
-                                    // Physical Properties Tab
-                                    EnhancedPhysicalPropertiesView(properties: result.physicalProperties)
-                                        .opacity(selectedTab == 0 ? 1 : 0)
-                                        .offset(x: selectedTab == 0 ? 0 : selectedTab < 0 ? -50 : 50)
-                                    
-                                    // Chemical Properties Tab
+                                VStack(alignment: .leading, spacing: 16) {
+                                switch selectedTab {
+                                case 0:
+                                EnhancedPhysicalPropertiesView(properties: result.physicalProperties)
+                                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                                case 1:
                                     EnhancedChemicalPropertiesView(properties: result.chemicalProperties)
-                                        .opacity(selectedTab == 1 ? 1 : 0)
-                                        .offset(x: selectedTab == 1 ? 0 : selectedTab < 1 ? -50 : 50)
-                                    
-                                    // Formation Tab
-                                    EnhancedFormationView(formation: result.formation)
-                                        .opacity(selectedTab == 2 ? 1 : 0)
-                                        .offset(x: selectedTab == 2 ? 0 : selectedTab < 2 ? -50 : 50)
-                                    
-                                    // Uses Tab with enhanced fact selection
+                                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                                case 2:
+                                EnhancedFormationView(formation: result.formation)
+                                        .transition(.opacity.combined(with: .move(edge: .trailing)))
+                                case 3:
                                     EnhancedFactDisplayView(
                                     uses: result.uses,
                                     rockName: result.name,
-                        confidence: result.confidence
-                    )
-                    .opacity(selectedTab == 3 ? 1 : 0)
-                    .offset(x: selectedTab == 3 ? 0 : selectedTab < 3 ? -50 : 50)
-                                }
-                                .padding(.horizontal)
-                                .padding(.top, 20)
+                                        confidence: result.confidence
+                                    )
+                                    .transition(.opacity.combined(with: .move(edge: .trailing)))
+                                default:
+                                    EmptyView()
+                                            }
+                                            }
+                                            .padding(.horizontal)
+                                            .padding(.top, 16)
                                 .padding(.bottom, 30)
                                 .opacity(tabsRevealed.allSatisfy { $0 } ? 1 : 0)
                                 .animation(ResultRevealAnimations.Curves.storytellingFlow.delay(0.5), value: tabsRevealed.allSatisfy { $0 })
