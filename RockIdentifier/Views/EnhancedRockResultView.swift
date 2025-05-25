@@ -14,6 +14,7 @@ struct EnhancedRockResultView: View {
     @State private var addedToCollection: Bool = false
     @State private var selectedTab = 0
     @State private var showShareSheet = false
+    @State private var showEnhancedShareSheet = false
     @State private var showNotes: Bool = false
     @State private var userNotes: String = ""
     @State private var backgroundGradientRotation = 0.0
@@ -351,7 +352,7 @@ struct EnhancedRockResultView: View {
                             Divider()
                                 .padding(.bottom, 8)
                             
-                            HStack(spacing: 20) {
+                            VStack(spacing: 12) {
                                 // Add to Collection button
                                 Button(action: {
                                     if !addedToCollection {
@@ -381,33 +382,64 @@ struct EnhancedRockResultView: View {
                                     .cornerRadius(12)
                                     .shadow(color: (addedToCollection ? Color.green : Color.blue).opacity(0.3), radius: 4, x: 0, y: 2)
                                 }
+                                .buttonStyle(ScaleButtonStyle())
                                 
-                                // Share button
-                                Button(action: {
-                                    impactGenerator.impactOccurred(intensity: 0.6)
-                                    showShareSheet = true
-                                }) {
-                                    HStack {
-                                        Image(systemName: "square.and.arrow.up")
-                                            .font(.system(size: 16))
-                                        
-                                        Text("Share")
-                                            .font(.headline)
+                                // Share buttons row
+                                HStack(spacing: 12) {
+                                    // Enhanced Share button
+                                    Button(action: {
+                                        impactGenerator.impactOccurred(intensity: 0.6)
+                                        showEnhancedShareSheet = true
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "square.and.arrow.up")
+                                                .font(.system(size: 16))
+                                            
+                                            Text("Create & Share")
+                                                .font(.subheadline)
+                                                .fontWeight(.semibold)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(StyleGuide.Colors.emeraldGradient)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(10)
+                                        .shadow(color: StyleGuide.Colors.emeraldGreen.opacity(0.3), radius: 4, x: 0, y: 2)
                                     }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 14)
-                                    .background(Color(.systemGray5))
-                                    .foregroundColor(.primary)
-                                    .cornerRadius(12)
-                                }
-                                .sheet(isPresented: $showShareSheet) {
-                                    if let image = result.image {
-                                        ShareSheet(items: [
-                                            image,
-                                            "I identified this \(result.name) using Rock Identifier!"
-                                        ])
-                                    } else {
-                                        ShareSheet(items: ["I identified this \(result.name) using Rock Identifier!"])
+                                    .buttonStyle(ScaleButtonStyle())
+                                    .sheet(isPresented: $showEnhancedShareSheet) {
+                                        EnhancedShareSheet(result: result, isPresented: $showEnhancedShareSheet)
+                                    }
+                                    
+                                    // Quick Share button (original functionality)
+                                    Button(action: {
+                                        impactGenerator.impactOccurred(intensity: 0.4)
+                                        showShareSheet = true
+                                    }) {
+                                        HStack {
+                                            Image(systemName: "photo")
+                                                .font(.system(size: 14))
+                                            
+                                            Text("Quick Share")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 12)
+                                        .background(Color(.systemGray5))
+                                        .foregroundColor(.primary)
+                                        .cornerRadius(10)
+                                    }
+                                    .buttonStyle(ScaleButtonStyle())
+                                    .sheet(isPresented: $showShareSheet) {
+                                        if let image = result.image {
+                                            ShareSheet(items: [
+                                                image,
+                                                "I identified this \(result.name) using Rock Identifier!"
+                                            ])
+                                        } else {
+                                            ShareSheet(items: ["I identified this \(result.name) using Rock Identifier!"])
+                                        }
                                     }
                                 }
                             }
