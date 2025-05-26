@@ -30,6 +30,11 @@ struct EnhancedRockResultView: View {
     @State private var isDramaticPause: Bool = false
     @State private var pauseProgress: Double = 0.0
     
+    // First identification state
+    @State private var isFirstIdentification: Bool = false
+    @State private var showFirstTimeMessage: Bool = false
+    @State private var showReviewPrompt: Bool = false
+    
     // Individual reveal states for fine-grained control
     @State private var imageRevealed: Bool = false
     @State private var nameRevealed: Bool = false
@@ -101,12 +106,47 @@ struct EnhancedRockResultView: View {
                     // Enhanced sparkles effect (shown during A-HA moment)
                     EnhancedSparklesView(
                         isActive: isSparklesActive,
-                        duration: timing.sparklesDuration
+                        duration: timing.sparklesDuration,
+                        isFirstIdentification: isFirstIdentification
                     )
                     
                     // Name spotlight effect during focus moment
                     if showNameSpotlight {
                         Color.clear.nameSpotlight(isActive: showNameSpotlight, geometry: geometry)
+                    }
+                    
+                    // First-time congratulations overlay
+                    if showFirstTimeMessage {
+                        FirstTimeCongratsOverlay(
+                            isVisible: $showFirstTimeMessage,
+                            rockName: result.name,
+                            onDismiss: {
+                                // Perfect time for review prompt!
+                                if ReviewPromptManager.shared.shouldShowReviewPrompt() {
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                                        showReviewPrompt = true
+                                    }
+                                }
+                            }
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.3).combined(with: .opacity),
+                            removal: .opacity.combined(with: .scale(scale: 1.1))
+                        ))
+                        .zIndex(100)
+                    }
+                    
+                    // Review prompt overlay (appears after first-time celebration)
+                    if showReviewPrompt {
+                        ReviewPromptView(
+                            isVisible: $showReviewPrompt,
+                            rockName: result.name
+                        )
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.3).combined(with: .opacity),
+                            removal: .opacity.combined(with: .scale(scale: 1.1))
+                        ))
+                        .zIndex(99)
                     }
                     
                     // Main content
@@ -554,8 +594,26 @@ struct EnhancedRockResultView: View {
         }
     }
     
+    // MARK: - First Identification Detection
+    
+    private func checkIfFirstIdentification() {
+        let hasIdentifiedBefore = UserDefaults.standard.bool(forKey: "has_identified_rock_before")
+        isFirstIdentification = !hasIdentifiedBefore
+        
+        if isFirstIdentification {
+            // Mark that they've now identified their first rock
+            UserDefaults.standard.set(true, forKey: "has_identified_rock_before")
+            print("🎉 First rock identification detected!")
+        } else {
+            print("Regular rock identification")
+        }
+    }
+    
     // Enhanced A-HA moment reveal animation sequence with dramatic storytelling
     private func startEnhancedRevealAnimation() {
+        // Check if this is their first identification
+        checkIfFirstIdentification()
+        
         // Prepare haptic engines for the journey
         HapticManager.shared.mediumImpact() // Prepare engines
         
@@ -596,8 +654,12 @@ struct EnhancedRockResultView: View {
                 isDramaticPause = false  // Hide the pause indicator
             }
             
-            // Major haptic for the reveal moment
-            HapticManager.shared.heavyImpact()
+            // Enhanced haptic for the reveal moment based on first-time status
+            if isFirstIdentification {
+                HapticManager.shared.celebrationSequence()
+            } else {
+                HapticManager.shared.identificationSuccess()
+            }
         }
         
         // Stage 4: Name focus effect (spotlight moment)
@@ -679,6 +741,15 @@ struct EnhancedRockResultView: View {
             
             // Final completion haptic
             HapticManager.shared.successFeedback()
+        }
+        
+        // Stage 10: First-time congratulations message (only for first identification)
+        if isFirstIdentification {
+            DispatchQueue.main.asyncAfter(deadline: .now() + timing.sparklesTime + timing.sparklesDuration + 0.5) {
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    showFirstTimeMessage = true
+                }
+            }
         }
         
         // Debug logging for timing optimization (can be removed in production)

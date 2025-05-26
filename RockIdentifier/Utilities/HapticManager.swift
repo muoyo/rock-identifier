@@ -77,6 +77,48 @@ class HapticManager {
         }
     }
     
+    // MARK: - Special Celebration Sequences
+    
+    /// Generates a celebratory haptic sequence for first identification
+    func celebrationSequence() {
+        if isHapticEnabled() {
+            // Prepare all generators
+            heavyImpactGenerator.prepare()
+            mediumImpactGenerator.prepare()
+            lightImpactGenerator.prepare()
+            notificationGenerator.prepare()
+            
+            // First identification gets a special haptic celebration
+            heavyImpact()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                self.mediumImpact()
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.lightImpact()
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                self.successFeedback()
+            }
+        }
+    }
+    
+    /// Generates a gentle success celebration for regular identifications
+    func identificationSuccess() {
+        if isHapticEnabled() {
+            mediumImpactGenerator.prepare()
+            notificationGenerator.prepare()
+            
+            mediumImpact()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                self.successFeedback()
+            }
+        }
+    }
+    
     // MARK: - Accessibility Helper
     
     /// Checks if haptic feedback should be provided

@@ -226,6 +226,138 @@ struct ResultRevealAnimations {
     }
 }
 
+// MARK: - First-Time Celebration Components
+
+/// Shooting star effect for first identification
+struct ShootingStar: View {
+    let delay: Double
+    let containerSize: CGSize
+    
+    @State private var position: CGPoint = CGPoint(x: -50, y: 100)
+    @State private var opacity: Double = 0
+    @State private var trailOpacity: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Trail effect
+            Path { path in
+                path.move(to: CGPoint(x: position.x - 30, y: position.y + 15))
+                path.addLine(to: position)
+            }
+            .stroke(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color.clear,
+                        StyleGuide.Colors.citrineGold.opacity(trailOpacity)
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                lineWidth: 3
+            )
+            
+            // Star
+            Image(systemName: "star.fill")
+                .font(.system(size: 16))
+                .foregroundColor(StyleGuide.Colors.citrineGold)
+                .opacity(opacity)
+                .position(position)
+                .shadow(color: StyleGuide.Colors.citrineGold.opacity(0.6), radius: 4)
+        }
+        .onAppear {
+            startAnimation()
+        }
+    }
+    
+    private func startAnimation() {
+        let endX = containerSize.width + 50
+        let endY = CGFloat.random(in: (containerSize.height * 0.4)...(containerSize.height * 0.7))
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            withAnimation(.linear(duration: 2.0)) {
+                position = CGPoint(x: endX, y: endY)
+                opacity = 1.0
+                trailOpacity = 0.8
+            }
+            
+            // Fade out
+            withAnimation(.easeOut(duration: 0.5).delay(1.5)) {
+                opacity = 0
+                trailOpacity = 0
+            }
+        }
+    }
+}
+
+/// Celebration burst effect for first identification
+struct CelebrationBurst: View {
+    let isActive: Bool
+    let delay: Double
+    let containerSize: CGSize
+    
+    @State private var burstScale: CGFloat = 0.1
+    @State private var burstOpacity: Double = 0
+    @State private var ringScale: CGFloat = 0.1
+    @State private var ringOpacity: Double = 0
+    
+    var body: some View {
+        ZStack {
+            // Expanding ring
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            StyleGuide.Colors.citrineGold.opacity(ringOpacity),
+                            Color.clear
+                        ]),
+                        startPoint: .center,
+                        endPoint: .trailing
+                    ),
+                    lineWidth: 4
+                )
+                .frame(width: 100, height: 100)
+                .scaleEffect(ringScale)
+                .position(x: containerSize.width / 2, y: containerSize.height * 0.4)
+            
+            // Central burst
+            Image(systemName: "sparkle")
+                .font(.system(size: 30))
+                .foregroundColor(StyleGuide.Colors.citrineGold)
+                .opacity(burstOpacity)
+                .scaleEffect(burstScale)
+                .position(x: containerSize.width / 2, y: containerSize.height * 0.4)
+                .shadow(color: StyleGuide.Colors.citrineGold.opacity(0.8), radius: 8)
+        }
+        .onAppear {
+            if isActive {
+                startBurst()
+            }
+        }
+    }
+    
+    private func startBurst() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            // Ring expansion
+            withAnimation(.easeOut(duration: 1.5)) {
+                ringScale = 3.0
+                ringOpacity = 0.0  // Fade as it expands
+            }
+            
+            // Central burst
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.5)) {
+                burstScale = 1.2
+                burstOpacity = 1.0
+            }
+            
+            // Fade central burst
+            withAnimation(.easeOut(duration: 0.8).delay(0.5)) {
+                burstOpacity = 0
+                burstScale = 1.5
+            }
+        }
+    }
+}
+
 // MARK: - Reveal Stage Enum
 
 enum RevealStage: Equatable {
@@ -366,8 +498,20 @@ extension View {
 struct EnhancedSparklesView: View {
     let isActive: Bool
     let duration: Double
+    let isFirstIdentification: Bool // Add this parameter
     
     @State private var sparklesData: [SparkleData] = []
+    
+    // Enhanced configuration for first-time users
+    private var sparkleCount: Int {
+        isFirstIdentification 
+            ? Int(Double(ResultRevealAnimations.VisualEffects.sparkleCount) * 1.6)  // 60% more
+            : ResultRevealAnimations.VisualEffects.sparkleCount
+    }
+    
+    private var enhancedDuration: Double {
+        isFirstIdentification ? duration * 1.4 : duration
+    }
     
     var body: some View {
         GeometryReader { geometry in
@@ -376,6 +520,25 @@ struct EnhancedSparklesView: View {
                     ForEach(sparklesData, id: \.id) { sparkle in
                         EnhancedSparkle(
                             data: sparkle,
+                            containerSize: geometry.size,
+                            isFirstTime: isFirstIdentification
+                        )
+                    }
+                    
+                    // Add extra celebration elements for first identification
+                    if isFirstIdentification {
+                        // Shooting stars effect (only for first time)
+                        ForEach(0..<5, id: \.self) { index in
+                            ShootingStar(
+                                delay: Double.random(in: 0.5...(duration * 0.8)),
+                                containerSize: geometry.size
+                            )
+                        }
+                        
+                        // Celebration burst at the name location
+                        CelebrationBurst(
+                            isActive: isActive,
+                            delay: 0.3,
                             containerSize: geometry.size
                         )
                     }
@@ -393,15 +556,17 @@ struct EnhancedSparklesView: View {
     }
     
     private func generateSparklesData() {
-        sparklesData = (0..<ResultRevealAnimations.VisualEffects.sparkleCount).map { index in
-            SparkleData(
+        sparklesData = (0..<sparkleCount).map { index in
+            let maxSize = isFirstIdentification 
+                ? ResultRevealAnimations.VisualEffects.sparkleMaxSize * 1.3 
+                : ResultRevealAnimations.VisualEffects.sparkleMaxSize
+            
+            return SparkleData(
                 id: index,
-                delay: Double.random(in: 0...duration * 0.3),
-                duration: Double.random(in: duration * 0.5...duration),
-                size: CGFloat.random(
-                    in: ResultRevealAnimations.VisualEffects.sparkleMinSize...ResultRevealAnimations.VisualEffects.sparkleMaxSize
-                ),
-                isLarge: index % 8 == 0,
+                delay: Double.random(in: 0...(enhancedDuration * 0.3)),
+                duration: Double.random(in: (enhancedDuration * 0.5)...enhancedDuration),
+                size: CGFloat.random(in: ResultRevealAnimations.VisualEffects.sparkleMinSize...maxSize),
+                isLarge: index % (isFirstIdentification ? 6 : 8) == 0, // More large sparkles for first time
                 color: sparkleColor(for: index),
                 initialPosition: randomPosition(),
                 rotationSpeed: Double.random(in: 180...720)
@@ -444,6 +609,7 @@ struct SparkleData {
 struct EnhancedSparkle: View {
     let data: SparkleData
     let containerSize: CGSize
+    let isFirstTime: Bool
     
     @State private var opacity: Double = 0
     @State private var scale: CGFloat = 0.1

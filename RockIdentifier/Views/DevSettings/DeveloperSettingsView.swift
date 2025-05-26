@@ -168,6 +168,101 @@ struct DeveloperSettingsView: View {
                     }
                 }
                 
+                Section(header: Text("First-Time Experience Testing")) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text("Current Status")
+                            Spacer()
+                            Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Experienced User" : "First-Time User")
+                                .fontWeight(.medium)
+                                .foregroundColor(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? .blue : .green)
+                        }
+                        
+                        Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Next identification will use regular animation" : "Next identification will trigger first-time celebration!")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                    
+                    Button(action: {
+                        UserDefaults.standard.removeObject(forKey: "has_identified_rock_before")
+                        lastAction = "Reset to First-Time User! Next identification will show: 60% more sparkles, shooting stars, celebration burst, enhanced haptics, and congratulations message."
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Reset to First-Time User")
+                            Spacer()
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                        }
+                    }
+                    
+                    Button(action: {
+                        UserDefaults.standard.set(true, forKey: "has_identified_rock_before")
+                        lastAction = "Set as Experienced User! Next identification will use regular (still excellent) animation."
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Set as Experienced User")
+                            Spacer()
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("First-Time Enhancements:")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                        
+                        Text("• 60% more sparkles (120 vs 75)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Larger sparkle sizes (30% bigger)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Shooting stars across screen")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Celebration burst at rock name")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Enhanced 4-stage haptic sequence")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Personal congratulations message")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• 40% longer celebration duration")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        
+                        Text("• Review prompt after celebration")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 8)
+                    
+                    Button(action: {
+                        ReviewPromptManager.shared.resetForTesting()
+                        lastAction = "Review prompt reset! Next first-time identification will show review prompt after celebration."
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Reset Review Prompt")
+                            Spacer()
+                            Image(systemName: "star.bubble")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                }
+                
                 Section(header: Text("Result Animation Testing")) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Animation Timing Profile")
