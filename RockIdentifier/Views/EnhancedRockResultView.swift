@@ -688,8 +688,17 @@ struct EnhancedRockResultView: View {
                 isSparklesActive = true
             }
             
-            // Sparkles end automatically based on duration
-            DispatchQueue.main.asyncAfter(deadline: .now() + timing.sparklesDuration) {
+            // Sparkles end timing depends on user type
+            let sparklesEndTime: Double
+            if isFirstIdentification {
+                // For first-time users: sparkles last through tab construction + fade-out
+                let constructionDuration = timing.allTabsRevealedTime - timing.sparklesTime
+                sparklesEndTime = constructionDuration + 1.0  // Construction + fade-out buffer
+            } else {
+                sparklesEndTime = timing.sparklesDuration  // Regular duration for returning users
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + sparklesEndTime) {
                 withAnimation(ResultRevealAnimations.Curves.gentleFade) {
                     isSparklesActive = false
                 }
@@ -744,12 +753,38 @@ struct EnhancedRockResultView: View {
         }
         
         // Stage 10: First-time congratulations message (only for first identification)
+        // Wait for ALL celebration effects to finish before showing the modal
         if isFirstIdentification {
-            DispatchQueue.main.asyncAfter(deadline: .now() + timing.sparklesTime + timing.sparklesDuration + 0.5) {
+            // Calculate when all enhanced effects actually finish using construction sequence:
+            let timing = ResultRevealAnimations.timing
+            let constructionDuration = timing.allTabsRevealedTime - timing.sparklesTime
+            let fadeOutBuffer = 1.0  // Gentle fade-out period
+            let enhancedSparklesDuration = constructionDuration + fadeOutBuffer  // Construction sequence duration
+            let shootingStarsMaxEnd = enhancedSparklesDuration * 0.9 + 3.5  // Latest shooting star (max delay + animation)
+            let celebrationBurstEnd = 0.3 + 2.3  // Burst delay + animation duration
+            
+            // Find the latest finishing effect
+            let allEffectsEndTime = max(enhancedSparklesDuration, max(shootingStarsMaxEnd, celebrationBurstEnd))
+            
+            // Congratulations appears right when construction sequence finishes
+            let congratsDelay = timing.sparklesTime + allEffectsEndTime
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + congratsDelay) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     showFirstTimeMessage = true
                 }
             }
+            
+            #if DEBUG
+            print("[First-Time] ✨ Construction Sequence Timing:")
+            print("[First-Time] Sparkles start: \(String(format: "%.1f", timing.sparklesTime))s")
+            print("[First-Time] All tabs revealed: \(String(format: "%.1f", timing.allTabsRevealedTime))s")
+            print("[First-Time] Construction duration: \(String(format: "%.1f", constructionDuration))s")
+            print("[First-Time] Enhanced sparkles duration: \(String(format: "%.1f", enhancedSparklesDuration))s (construction + fade)")
+            print("[First-Time] Shooting stars end: \(String(format: "%.1f", shootingStarsMaxEnd))s")
+            print("[First-Time] All effects end at: \(String(format: "%.1f", timing.sparklesTime + allEffectsEndTime))s")
+            print("[First-Time] Congratulations appears at: \(String(format: "%.1f", congratsDelay))s")
+            #endif
         }
         
         // Debug logging for timing optimization (can be removed in production)

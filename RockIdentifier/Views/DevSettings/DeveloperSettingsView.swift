@@ -173,12 +173,18 @@ struct DeveloperSettingsView: View {
                         HStack {
                             Text("Current Status")
                             Spacer()
-                            Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Experienced User" : "First-Time User")
-                                .fontWeight(.medium)
-                                .foregroundColor(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? .blue : .green)
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Experienced User" : "First-Time User")
+                                    .fontWeight(.medium)
+                                    .foregroundColor(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? .blue : .green)
+                                
+                                Text(ReviewPromptManager.shared.shouldShowReviewPrompt() ? "Review Prompt Ready" : "Review Prompt Shown")
+                                    .font(.caption2)
+                                    .foregroundColor(ReviewPromptManager.shared.shouldShowReviewPrompt() ? .green : .orange)
+                            }
                         }
                         
-                        Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Next identification will use regular animation" : "Next identification will trigger first-time celebration!")
+                        Text(UserDefaults.standard.bool(forKey: "has_identified_rock_before") ? "Next identification will use regular animation" : "Next identification will trigger first-time celebration → review prompt!")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -186,7 +192,8 @@ struct DeveloperSettingsView: View {
                     
                     Button(action: {
                         UserDefaults.standard.removeObject(forKey: "has_identified_rock_before")
-                        lastAction = "Reset to First-Time User! Next identification will show: 60% more sparkles, shooting stars, celebration burst, enhanced haptics, and congratulations message."
+                        ReviewPromptManager.shared.resetForTesting() // Also reset review prompt!
+                        lastAction = "Reset to First-Time User! This also resets the review prompt so you can test the complete flow: Enhanced celebration → User dismisses → Review prompt appears."
                         showActionConfirmation = true
                     }) {
                         HStack {
@@ -251,16 +258,22 @@ struct DeveloperSettingsView: View {
                     
                     Button(action: {
                         ReviewPromptManager.shared.resetForTesting()
-                        lastAction = "Review prompt reset! Next first-time identification will show review prompt after celebration."
+                        lastAction = "Review prompt reset! Use this to test the review prompt separately, or after using 'Set as Experienced User'."
                         showActionConfirmation = true
                     }) {
                         HStack {
-                            Text("Reset Review Prompt")
+                            Text("Reset Review Prompt Only")
                             Spacer()
                             Image(systemName: "star.bubble")
                                 .foregroundColor(.orange)
                         }
                     }
+                    
+                    Text("Use 'Reset to First-Time User' for complete flow testing, or this button to test review prompt independently.")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.leading)
+                        .padding(.top, 2)
                 }
                 
                 Section(header: Text("Result Animation Testing")) {

@@ -340,8 +340,8 @@ Suggested improvements:
 - [ ] **App Store Preparation**
   - [ ] Create compelling screenshots
   - [ ] Write keyword-optimized description
-  - [ ] Produce app preview video
-  - [ ] Set up TestFlight for beta testing
+  - [ ] Produce app preview video (OPTIONAL)
+  - [x] Set up TestFlight for beta testing
   - [ ] Complete App Store Connect information
 
 ## Phase 8: Testing & Launch

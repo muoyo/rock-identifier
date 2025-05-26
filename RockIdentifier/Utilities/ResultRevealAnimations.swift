@@ -113,6 +113,7 @@ struct ResultRevealAnimations {
         var confidenceAppearTime: Double { categoryAppearTime + categoryReveal }
         var sparklesTime: Double { nameAppearTime + nameReveal + sparklesStart }
         var firstTabTime: Double { confidenceAppearTime + confidenceReveal + 0.3 }
+        var allTabsRevealedTime: Double { firstTabTime + (tabRevealStagger * 4) }  // When tab construction completes
         var contentStartTime: Double { firstTabTime + (tabRevealStagger * 4) + 0.2 }
         var actionsStartTime: Double { contentStartTime + 0.5 }
     }
@@ -505,12 +506,21 @@ struct EnhancedSparklesView: View {
     // Enhanced configuration for first-time users
     private var sparkleCount: Int {
         isFirstIdentification 
-            ? Int(Double(ResultRevealAnimations.VisualEffects.sparkleCount) * 1.6)  // 60% more
+        ? Int(Double(ResultRevealAnimations.VisualEffects.sparkleCount) * 2.5)  // 150% more sparkles
             : ResultRevealAnimations.VisualEffects.sparkleCount
     }
     
+    // Construction sequence: sparkles last through tab setup for first-time users
     private var enhancedDuration: Double {
-        isFirstIdentification ? duration * 1.4 : duration
+        if isFirstIdentification {
+            // Calculate duration from sparkles start to tab construction completion
+            let timing = ResultRevealAnimations.timing
+            let constructionDuration = timing.allTabsRevealedTime - timing.sparklesTime
+            let fadeOutBuffer = 1.0  // Gentle fade-out period
+            return constructionDuration + fadeOutBuffer
+        } else {
+            return duration
+        }
     }
     
     var body: some View {
@@ -527,10 +537,10 @@ struct EnhancedSparklesView: View {
                     
                     // Add extra celebration elements for first identification
                     if isFirstIdentification {
-                        // Shooting stars effect (only for first time)
-                        ForEach(0..<5, id: \.self) { index in
+                        // Shooting stars effect (only for first time) - continue through construction
+                        ForEach(0..<8, id: \.self) { index in
                             ShootingStar(
-                                delay: Double.random(in: 0.5...(duration * 0.8)),
+                                delay: Double.random(in: 0.5...(enhancedDuration * 0.9)),
                                 containerSize: geometry.size
                             )
                         }

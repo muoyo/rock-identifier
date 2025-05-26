@@ -40,7 +40,7 @@ struct ReviewPromptView: View {
                         .foregroundColor(.primary)
                         .multilineTextAlignment(.center)
                     
-                    Text("You just identified your first \\(rockName)! 🎉\\nHelp other rockhounds discover the magic.")
+                    Text("You just identified your first \(rockName)! 🎉\nHelp other rockhounds discover the magic.")
                         .font(.body)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
