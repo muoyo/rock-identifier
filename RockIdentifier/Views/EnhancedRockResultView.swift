@@ -340,6 +340,23 @@ struct EnhancedRockResultView: View {
                                 .animation(ResultRevealAnimations.Curves.storytellingFlow.delay(0.5), value: tabsRevealed.allSatisfy { $0 })
                                 .animation(.easeInOut(duration: 0.3), value: selectedTab)
                                 
+                                // Enhanced Location Section - Always visible and appears early
+                                EnhancedLocationSection(
+                                    title: "Location Found",
+                                    content: result.location,
+                                    placeholder: "Tap 'Add to Collection' to set location later",
+                                    textFieldPlaceholder: "Where was this found?",
+                                    isEditMode: false, // Always read-only in result view
+                                    editedText: .constant(""),
+                                    iconName: "location.fill", // More visible icon
+                                    iconColor: StyleGuide.Colors.emeraldGreen
+                                )
+                                .padding(.horizontal)
+                                .padding(.top, 20)
+                                // Temporarily always visible for debugging
+                                // .opacity(tabsRevealed.allSatisfy { $0 } ? 1 : 0) // Appears with tabs
+                                // .animation(ResultRevealAnimations.Curves.storytellingFlow.delay(0.8), value: tabsRevealed.allSatisfy { $0 })
+                                
                                 Spacer(minLength: 60)
                             }
                         }
@@ -1093,43 +1110,44 @@ struct EnhancedFormationView: View {
             }
             .padding(.horizontal, 6)
             
-            // Locations map section
+            // Common locations with enhanced styling
             if let locations = formation.commonLocations, !locations.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Common Locations")
                         .font(.headline)
-                        .padding(.top, 10)
+                        .padding(.top, 8)
                     
-                    // World map image placeholder
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color(.systemGray6))
-                            .frame(height: 150)
-                            .overlay(
-                                Image(systemName: "map")
-                                    .font(.system(size: 40))
-                                    .foregroundColor(.gray.opacity(0.5))
-                            )
-                        
-                        // Location list overlay
-                        VStack(alignment: .leading, spacing: 4) {
-                            ForEach(locations, id: \.self) { location in
-                                HStack(spacing: 8) {
-                                    Image(systemName: "mappin")
-                                        .foregroundColor(.red)
-                                        .font(.system(size: 14))
+                    // Enhanced location cards
+                    VStack(alignment: .leading, spacing: 8) {
+                        ForEach(locations, id: \.self) { location in
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(StyleGuide.Colors.roseQuartzPink.opacity(0))
+                                        .frame(width: 10, height: 32)
                                     
-                                    Text(location)
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(.primary)
+                                    Image(systemName: "mappin")
+                                        .foregroundColor(StyleGuide.Colors.roseQuartzPink)
+                                        .font(.system(size: 16))
                                 }
-                                .padding(.vertical, 4)
+                                
+                                Text(location)
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                
+                                Spacer()
                             }
+                            .padding(.vertical, 8)
+                            .padding(.horizontal, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.small)
+                                    .fill(StyleGuide.Colors.roseQuartzPink.opacity(0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.small)
+                                            .stroke(StyleGuide.Colors.roseQuartzPink.opacity(0.2), lineWidth: 1)
+                                    )
+                            )
                         }
-                        .padding(16)
-                        .background(Color(.systemBackground).opacity(0.85))
-                        .cornerRadius(10)
-                        .padding(12)
                     }
                 }
             }

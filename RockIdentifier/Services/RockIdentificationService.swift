@@ -36,7 +36,7 @@ class RockIdentificationService: ObservableObject {
     @Published var currentImage: UIImage? // Store the current image being processed
     
     // Toggle between mock data and real API calls
-    @Published var useMockData: Bool = false // Set to true by default for development
+    @Published var useMockData: Bool = true // Set to true by default for development
     
     private let connectionRequest = ConnectionRequest()
     

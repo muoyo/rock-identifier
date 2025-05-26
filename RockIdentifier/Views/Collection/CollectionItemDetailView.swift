@@ -603,10 +603,10 @@ struct FormationContentView: View {
                             HStack(spacing: 12) {
                                 ZStack {
                                     Circle()
-                                        .fill(StyleGuide.Colors.roseQuartzPink.opacity(0.15))
-                                        .frame(width: 32, height: 32)
+                                        .fill(StyleGuide.Colors.roseQuartzPink.opacity(0))
+                                        .frame(width: 10, height: 32)
                                     
-                                    Image(systemName: "mappin.circle.fill")
+                                    Image(systemName: "mappin")
                                         .foregroundColor(StyleGuide.Colors.roseQuartzPink)
                                         .font(.system(size: 16))
                                 }
@@ -655,14 +655,14 @@ struct EnhancedNotesSection: View {
                 // Beautiful icon with animation
                 ZStack {
                     Circle()
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 32, height: 32)
+                        .fill(iconColor.opacity(0.08)) // Reduced opacity for better icon visibility
+                        .frame(width: 36, height: 36)
                     
                     // Subtle pulse ring
                     Circle()
-                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
-                        .frame(width: 30, height: 30)
-                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
+                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.25), lineWidth: 1.5) // Thinner, less prominent
+                        .frame(width: 34, height: 34)
+                        .scaleEffect(hasAnimated ? 1.15 : 1.0) // Less dramatic scaling
                         .opacity(hasAnimated ? 0.0 : 1.0)
                         .animation(
                             Animation.easeOut(duration: 1.0).delay(0.2),
@@ -671,7 +671,7 @@ struct EnhancedNotesSection: View {
                     
                     Image(systemName: iconName)
                         .foregroundColor(iconColor)
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 18, weight: .semibold)) // Larger, bolder icon
                 }
                 
                 Text(title)
@@ -758,24 +758,24 @@ struct EnhancedLocationSection: View {
             HStack(spacing: 12) {
                 // Beautiful icon with animation
                 ZStack {
-                    Circle()
-                        .fill(iconColor.opacity(0.12))
-                        .frame(width: 32, height: 32)
-                    
-                    // Subtle pulse ring
-                    Circle()
-                        .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.3), lineWidth: 2)
-                        .frame(width: 30, height: 30)
-                        .scaleEffect(hasAnimated ? 1.2 : 1.0)
-                        .opacity(hasAnimated ? 0.0 : 1.0)
-                        .animation(
-                            Animation.easeOut(duration: 1.0).delay(0.3),
-                            value: hasAnimated
-                        )
-                    
-                    Image(systemName: iconName)
-                        .foregroundColor(iconColor)
-                        .font(.system(size: 14, weight: .medium))
+                Circle()
+                .fill(iconColor.opacity(0.08)) // Reduced opacity for better icon visibility
+                .frame(width: 36, height: 36)
+                
+                // Subtle pulse ring
+                Circle()
+                .stroke(iconColor.opacity(hasAnimated ? 0.0 : 0.25), lineWidth: 1.5) // Thinner, less prominent
+                .frame(width: 34, height: 34)
+                .scaleEffect(hasAnimated ? 1.15 : 1.0) // Less dramatic scaling
+                .opacity(hasAnimated ? 0.0 : 1.0)
+                .animation(
+                Animation.easeOut(duration: 1.0).delay(0.3),
+                value: hasAnimated
+                )
+                
+                Image(systemName: iconName)
+                .foregroundColor(iconColor)
+                .font(.system(size: 18, weight: .semibold)) // Larger, bolder icon
                 }
                 
                 Text(title)

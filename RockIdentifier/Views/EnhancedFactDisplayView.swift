@@ -19,7 +19,7 @@ struct EnhancedFactDisplayView: View {
     private let rotationInterval: TimeInterval = 6.0 // Slightly longer for better reading
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 20) {
             // Header with statistics
             factSectionHeader
             
@@ -27,7 +27,7 @@ struct EnhancedFactDisplayView: View {
             if factManager.availableFacts.isEmpty {
                 emptyFactState
             } else {
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     // Current fact card
                     if let currentFact = factManager.currentFact {
                         EnhancedFactCard(
@@ -44,14 +44,17 @@ struct EnhancedFactDisplayView: View {
                     
                     // Fact navigation controls
                     factNavigationControls
+                        .padding(.top, 4)
                 }
             }
             
             // Browse all facts button
             browseAllFactsButton
+                .padding(.top, 8)
             
             // Traditional uses sections (non-facts)
             traditionalUsesSection
+                .padding(.top, 12)
         }
         .onAppear {
             setupFacts()
@@ -68,25 +71,24 @@ struct EnhancedFactDisplayView: View {
     // MARK: - Header Section
     
     private var factSectionHeader: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    Image(systemName: "lightbulb.fill")
-                        .foregroundColor(.yellow)
-                        .font(.title3)
-                    
-                    Text("Did You Know?")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "lightbulb.fill")
+                    .foregroundColor(.yellow)
+                    .font(.title3)
                 
-                if !factManager.availableFacts.isEmpty {
-                    let stats = factManager.getFactStatistics()
-                    FactStatisticsView(statistics: stats)
-                }
+                Text("Did You Know?")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
             }
             
-            Spacer()
+            if !factManager.availableFacts.isEmpty {
+                let stats = factManager.getFactStatistics()
+                FactStatisticsView(statistics: stats)
+                    .padding(.leading, 4)
+            }
         }
     }
     
@@ -112,7 +114,7 @@ struct EnhancedFactDisplayView: View {
     // MARK: - Navigation Controls
     
     private var factNavigationControls: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: 20) {
             // Previous fact button
             Button(action: selectPreviousFact) {
                 Image(systemName: "chevron.left.circle.fill")
@@ -123,11 +125,11 @@ struct EnhancedFactDisplayView: View {
             
             // Fact indicator dots
             if factManager.availableFacts.count > 1 {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     ForEach(0..<min(factManager.availableFacts.count, 5), id: \.self) { index in
                         Circle()
                             .fill(index == currentFactIndex ? Color.orange : Color.gray.opacity(0.3))
-                            .frame(width: 8, height: 8)
+                            .frame(width: 10, height: 10)
                             .scaleEffect(index == currentFactIndex ? 1.2 : 1.0)
                             .animation(.easeInOut(duration: 0.2), value: currentFactIndex)
                     }
@@ -136,6 +138,7 @@ struct EnhancedFactDisplayView: View {
                         Text("+\(factManager.availableFacts.count - 5)")
                             .font(.caption2)
                             .foregroundColor(.secondary)
+                            .padding(.leading, 4)
                     }
                 }
             }
@@ -173,7 +176,7 @@ struct EnhancedFactDisplayView: View {
     // MARK: - Traditional Uses Section
     
     private var traditionalUsesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             if let historical = uses.historical, !historical.isEmpty {
                 TraditionalUseSection(title: "Historical Uses", items: historical, icon: "scroll")
             }
