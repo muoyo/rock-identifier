@@ -36,6 +36,9 @@ struct ContentView: View {
     // Developer settings sheet
     @State private var showDeveloperSettings: Bool = false
     
+    // Settings sheet
+    @State private var showSettings: Bool = false
+    
     // Initialize notification observer for developer mode toggle
     init() {
         // Set up notification observer for developer mode toggle
@@ -71,6 +74,9 @@ struct ContentView: View {
                             }
                         }
                     }
+                },
+                onShowSettings: {
+                    showSettings = true
                 },
                 showCollection: $showCollection,
                 remainingIdentifications: subscriptionManager.remainingIdentifications
@@ -124,6 +130,11 @@ struct ContentView: View {
                 isPresented: $showDeveloperSettings,
                 subscriptionManager: subscriptionManager
             )
+        }
+        // Show settings sheet
+        .sheet(isPresented: $showSettings) {
+            SettingsView(isPresented: $showSettings)
+                .environmentObject(subscriptionManager)
         }
         // Show error alert if identification fails
         .alert(isPresented: .constant(identificationService.state.errorMessage != nil)) {
@@ -497,9 +508,12 @@ struct ChemicalPropertiesView: View {
                     ForEach(elements, id: \.symbol) { element in
                         HStack(alignment: .top) {
                             Text("\(element.symbol)")
-                                .font(.subheadline)
                                 .frame(width: 30, alignment: .leading)
-                                .bold()
+                                .font(.system(size: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .bold))
+
+                                /* .font(.subheadline)
+                                .frame(width: 30, alignment: .leading)
+                                .fontWeight(.bold) */
                             
                             Text(element.name)
                                 .font(.subheadline)

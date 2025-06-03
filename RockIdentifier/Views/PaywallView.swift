@@ -915,11 +915,15 @@ struct PaywallView: View {
     }
     
     private func showTerms() {
-        print("Would show terms page")
+        if let url = URL(string: "https://apple.com/legal/internet-services/itunes/dev/stdeula") {
+            UIApplication.shared.open(url)
+        }
     }
     
     private func showPrivacy() {
-        print("Would show privacy policy")
+        if let url = URL(string: "https://appmagic.co/apps/privacypolicy.html") {
+            UIApplication.shared.open(url)
+        }
     }
 }
 

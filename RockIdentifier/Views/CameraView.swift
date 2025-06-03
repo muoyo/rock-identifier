@@ -21,6 +21,9 @@ struct CameraView: View {
     // Callback for when an image is captured
     let onCaptureImage: (UIImage) -> Void
     
+    // Callback for when settings should be shown
+    let onShowSettings: () -> Void
+    
     // Image picker related states
     @State private var showImagePicker: Bool = false
     @State private var selectedImage: UIImage? = nil
@@ -144,6 +147,21 @@ struct CameraView: View {
                             showGrid.toggle()
                         }) {
                             Image(systemName: showGrid ? "grid" : "grid.circle")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 22, height: 22, alignment: .center)
+                                .padding(12)
+                                .background(Color.black.opacity(0.6))
+                                .foregroundColor(.white)
+                                .cornerRadius(20)
+                        }
+                        
+                        // Settings button
+                        Button(action: {
+                            HapticManager.shared.lightImpact()
+                            onShowSettings()
+                        }) {
+                            Image(systemName: "gearshape")
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 22, height: 22, alignment: .center)

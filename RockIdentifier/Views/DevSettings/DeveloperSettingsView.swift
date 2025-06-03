@@ -334,7 +334,34 @@ struct DeveloperSettingsView: View {
                     }
                 }
                 
-                // Future sections can be added here
+                Section(header: Text("Legal")) {
+                    Button(action: {
+                        if let url = URL(string: "https://appmagic.co/apps/privacypolicy.html") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        HStack {
+                            Text("Privacy Policy")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    Button(action: {
+                        if let url = URL(string: "https://apple.com/legal/internet-services/itunes/dev/stdeula") {
+                            UIApplication.shared.open(url)
+                        }
+                    }) {
+                        HStack {
+                            Text("Terms of Use")
+                            Spacer()
+                            Image(systemName: "arrow.up.right.square")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                }
+                
                 Section(header: Text("App Info")) {
                     HStack {
                         Text("Version")
