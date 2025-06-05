@@ -1,4 +1,4 @@
-// Rock Identifier: Crystal ID
+// Rock Identifier: Crystal ID - Restored Seamless Experience
 // Muoyo Okome
 //
 
@@ -25,11 +25,6 @@ struct ContentView: View {
     // Result presentation state
     @State private var showResultView: Bool = false
     
-    // Current user tier - would be managed by subscription service
-    // Using subscription service for tier information
-    
-    // Using subscription manager for remaining identifications count
-    
     // Processing view state
     @State private var showProcessingView: Bool = false
     
@@ -41,15 +36,12 @@ struct ContentView: View {
     
     // Initialize notification observer for developer mode toggle
     init() {
-        // Set up notification observer for developer mode toggle
         NotificationCenter.default.addObserver(
             forName: NSNotification.Name("ToggleDeveloperMode"),
             object: nil,
             queue: .main
         ) { _ in
-            // Toggle developer mode
-            // We can't use a capture list here because this is initialized before the EnvironmentObject
-            // The toggle will be handled in the .onReceive view modifier instead
+            // Toggle will be handled in .onReceive view modifier
         }
     }
     
@@ -59,16 +51,12 @@ struct ContentView: View {
             CameraView(
                 isActive: $cameraIsActive,
                 onCaptureImage: { image in
-                    // When an image is captured, process it
                     withAnimation {
-                        // Only show processing view if we have identifications left
                         if subscriptionManager.status.isActive || subscriptionManager.remainingIdentifications > 0 {
                             showProcessingView = true
                             processImage(image)
                         } else {
-                            // If no identifications left, don't even show processing view
                             print("No identifications remaining - showing paywall instead")
-                            // Show the paywall
                             if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
                                 PaywallManager.shared.showSoftPaywall()
                             }
@@ -82,7 +70,7 @@ struct ContentView: View {
                 remainingIdentifications: subscriptionManager.remainingIdentifications
             )
             
-            // Processing view overlay
+            // Processing view overlay - Back to original seamless experience
             if showProcessingView {
                 ProcessingView(
                     isVisible: $showProcessingView,
@@ -92,7 +80,7 @@ struct ContentView: View {
                         identificationService.state = .success(result)
                     }
                 )
-                .zIndex(10) // Ensure it's above other views
+                .zIndex(10)
                 .transition(.opacity)
             }
         }
@@ -100,7 +88,6 @@ struct ContentView: View {
         .background(Color.black)
         // Show collection sheet
         .sheet(isPresented: $showCollection) {
-            // Show collection view
             CollectionListView(
                 isPresented: $showCollection,
                 collectionManager: collectionManager
@@ -108,7 +95,6 @@ struct ContentView: View {
         }
         // Show result sheet
         .sheet(isPresented: $showResultView) {
-            // Show result view after identification
             if case .success(let result) = identificationService.state {
                 EnhancedRockResultView(
                     isPresented: $showResultView,
@@ -116,11 +102,7 @@ struct ContentView: View {
                     collectionManager: collectionManager
                 )
                 .onDisappear {
-                    // Reset camera view and identification state when result view is dismissed
-                    identificationService.state = .idle
-                    withAnimation {
-                        cameraIsActive = true
-                    }
+                    resetToCamera()
                 }
             }
         }
@@ -142,62 +124,54 @@ struct ContentView: View {
                 title: Text("Identification Failed"),
                 message: Text(identificationService.state.errorMessage ?? "Unknown error"),
                 dismissButton: .default(Text("OK")) {
-                    // Reset state and camera
-                    identificationService.state = .idle
-                    withAnimation {
-                        cameraIsActive = true
-                    }
+                    resetToCamera()
                 }
             )
         }
         .onChange(of: identificationService.state) { state in
-            // React to changes in identification state
-            switch state {
-            case .success:
-                // Hide processing view first
-                withAnimation {
-                    showProcessingView = false
-                }
-                
-                // Switch to success state
-                // Important: First deactivate camera, then show result view
-                // with a slight delay to allow for proper transitions
-                cameraIsActive = false
-                
-                // Notify FreeTierManager of successful identification
-                // This might trigger a soft paywall based on remaining identifications
-                FreeTierManager.shared.handleSuccessfulIdentification()
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    print("Showing result view")
-                    showResultView = true
-                }
-                
-            case .error:
-                // Hide processing view and show error
-                withAnimation {
-                    showProcessingView = false
-                }
-                
-                // Error handling is done via alert
-                print("Identification error: \(state.errorMessage ?? "Unknown error")")
-                
-            case .processing:
-                // Processing is now shown with the dedicated processing view
-                print("Processing identification")
-                
-            case .idle:
-                // Initial state
-                print("Identification service idle")
-            }
+            handleStateChange(state)
         }
         // Handle developer mode toggle notification
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ToggleDeveloperMode"))) { _ in
-            // Show developer settings
             showDeveloperSettings = true
-            
-            // Provide haptic feedback
             HapticManager.shared.successFeedback()
+        }
+    }
+    
+    // Handle state changes - Back to original simple flow
+    private func handleStateChange(_ state: IdentificationState) {
+        switch state {
+        case .processing:
+            print("Processing identification")
+            
+        case .success:
+            print("Identification complete")
+            // Hide processing view first
+            withAnimation {
+                showProcessingView = false
+            }
+            
+            // Switch to success state
+            cameraIsActive = false
+            
+            // Notify FreeTierManager of successful identification
+            FreeTierManager.shared.handleSuccessfulIdentification()
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                print("Showing result view")
+                showResultView = true
+            }
+            
+        case .error:
+            print("Identification error: \(state.errorMessage ?? "Unknown error")")
+            // Hide processing view and show error
+            withAnimation {
+                showProcessingView = false
+            }
+            HapticManager.shared.errorFeedback()
+            
+        case .idle:
+            print("Identification service idle")
         }
     }
     
@@ -205,58 +179,40 @@ struct ContentView: View {
     private func processImage(_ image: UIImage) {
         // Check if user has identifications remaining
         if !subscriptionManager.status.isActive && subscriptionManager.remainingIdentifications <= 0 {
-            // Use FreeTierManager to handle this case - it will show the paywall if needed
             print("Identification limit reached - showing paywall")
             
-            // Hide processing view immediately
             withAnimation {
                 showProcessingView = false
             }
             
-            // Show soft paywall
             PaywallManager.shared.showSoftPaywall()
-            
-            // *** DO NOT PROCEED WITH IDENTIFICATION ***
             return
         }
         
-        // Record the identification (updates counter for free tier)
+        // Record the identification
         let recordSuccess = subscriptionManager.recordIdentification()
         if !recordSuccess {
-            // If we couldn't record (reached limit), show paywall
             print("Identification limit reached - showing paywall")
             
-            // Hide processing view immediately
             withAnimation {
                 showProcessingView = false
             }
             
-            // Show soft paywall
             PaywallManager.shared.showSoftPaywall()
-            
-            // *** DO NOT PROCEED WITH IDENTIFICATION ***
             return
         }
         
         // Process the image with the identification service
         identificationService.identifyRock(from: image)
     }
-}
-
-// Extension to get error message from identification state
-extension IdentificationState {
-    var errorMessage: String? {
-        if case .error(let message) = self {
-            return message
+    
+    // Reset to camera view
+    private func resetToCamera() {
+        identificationService.state = .idle
+        withAnimation {
+            cameraIsActive = true
         }
-        return nil
     }
-}
-
-// User tier enum
-enum UserTier {
-    case free
-    case premium
 }
 
 // Collection list view - redirects to the real CollectionView
@@ -510,10 +466,6 @@ struct ChemicalPropertiesView: View {
                             Text("\(element.symbol)")
                                 .frame(width: 30, alignment: .leading)
                                 .font(.system(size: UIFont.preferredFont(forTextStyle: .subheadline).pointSize, weight: .bold))
-
-                                /* .font(.subheadline)
-                                .frame(width: 30, alignment: .leading)
-                                .fontWeight(.bold) */
                             
                             Text(element.name)
                                 .font(.subheadline)
@@ -667,8 +619,6 @@ struct PropertyRow: View {
         .padding(.vertical, 4)
     }
 }
-
-// ShareSheet implementation moved to dedicated ShareSheet.swift file
 
 // Confidence indicator component
 struct ConfidenceIndicator: View {
