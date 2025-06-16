@@ -109,6 +109,7 @@ struct DelightfulOnboardingView: View {
                     ForEach(0..<pages.count, id: \.self) { index in
                         DelightfulOnboardingPageView(
                             page: pages[index],
+                            pageIndex: index,
                             isActive: currentPage == index
                         )
                         .tag(index)
@@ -298,35 +299,38 @@ struct DelightfulOnboardingView: View {
 
 struct DelightfulOnboardingPageView: View {
     let page: DelightfulOnboardingPage
+    let pageIndex: Int
     let isActive: Bool
     
     @State private var titleAppeared = false
     @State private var subtitleAppeared = false
     @State private var descriptionAppeared = false
     @State private var imageAppeared = false
-    @State private var interactiveReady = false
     
     var body: some View {
         VStack(spacing: 0) {
             Spacer(minLength: 40)
             
-            // Enhanced image with interactive elements
+            // Premium SwiftUI-rendered visual instead of static image
             ZStack {
-                // Main illustration
-                Image(page.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 280)
-                    .scaleEffect(imageAppeared ? 1.0 : 0.8)
-                    .opacity(imageAppeared ? 1.0 : 0.0)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.1), value: imageAppeared)
-                
-                // Interactive overlay based on page type
-                if interactiveReady {
-                    InteractiveOverlay(type: page.interactive)
-                        .transition(.scale.combined(with: .opacity))
+                // Dynamic visual based on page
+                switch pageIndex {
+                case 0:
+                    FloatingCrystalView()
+                case 1:
+                    AIScanningView()
+                case 2:
+                    DynamicCollectionView()
+                case 3:
+                    CameraApertureView()
+                default:
+                    FloatingCrystalView()
                 }
             }
+            .frame(height: 280)
+            .scaleEffect(imageAppeared ? 1.0 : 0.8)
+            .opacity(imageAppeared ? 1.0 : 0.0)
+            .animation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.1), value: imageAppeared)
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
             
@@ -385,7 +389,6 @@ struct DelightfulOnboardingPageView: View {
         subtitleAppeared = false
         descriptionAppeared = false
         imageAppeared = false
-        interactiveReady = false
         
         // Staggered entrance animations
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -403,10 +406,6 @@ struct DelightfulOnboardingPageView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) {
             descriptionAppeared = true
         }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            interactiveReady = true
-        }
     }
     
     private func resetPageAnimations() {
@@ -414,7 +413,6 @@ struct DelightfulOnboardingPageView: View {
         subtitleAppeared = false
         descriptionAppeared = false
         imageAppeared = false
-        interactiveReady = false
     }
 }
 
@@ -531,82 +529,6 @@ struct SparkleView: View {
     }
 }
 
-struct InteractiveOverlay: View {
-    let type: InteractiveType
-    
-    var body: some View {
-        switch type {
-        case .sparklingCrystal:
-            SparklingCrystalOverlay()
-        case .scanningDemo:
-            ScanningDemoOverlay()
-        case .collectionPreview:
-            CollectionPreviewOverlay()
-        case .cameraPreview:
-            CameraPreviewOverlay()
-        }
-    }
-}
-
-// Placeholder interactive overlays (to be implemented)
-struct SparklingCrystalOverlay: View {
-    @State private var sparkleAnimation = false
-    
-    var body: some View {
-        Circle()
-            .fill(Color.white.opacity(0.2))
-            .frame(width: 60, height: 60)
-            .scaleEffect(sparkleAnimation ? 1.2 : 1.0)
-            .opacity(sparkleAnimation ? 0.5 : 0.8)
-            .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: sparkleAnimation)
-            .onAppear {
-                sparkleAnimation = true
-            }
-    }
-}
-
-struct ScanningDemoOverlay: View {
-    @State private var scanAnimation = false
-    
-    var body: some View {
-        Rectangle()
-            .fill(Color.white.opacity(0.3))
-            .frame(width: 100, height: 2)
-            .offset(y: scanAnimation ? -20 : 20)
-            .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: scanAnimation)
-            .onAppear {
-                scanAnimation = true
-            }
-    }
-}
-
-struct CollectionPreviewOverlay: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            ForEach(0..<3, id: \.self) { _ in
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.2))
-                    .frame(width: 40, height: 40)
-            }
-        }
-    }
-}
-
-struct CameraPreviewOverlay: View {
-    @State private var pulseAnimation = false
-    
-    var body: some View {
-        Circle()
-            .stroke(Color.white.opacity(0.8), lineWidth: 3)
-            .frame(width: 80, height: 80)
-            .scaleEffect(pulseAnimation ? 1.1 : 1.0)
-            .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: pulseAnimation)
-            .onAppear {
-                pulseAnimation = true
-            }
-    }
-}
-
 // MARK: - Data Models
 
 struct DelightfulOnboardingPage {
@@ -618,6 +540,7 @@ struct DelightfulOnboardingPage {
     let interactive: InteractiveType
 }
 
+// Keeping for backward compatibility but not used with new premium visuals
 enum InteractiveType {
     case sparklingCrystal
     case scanningDemo
