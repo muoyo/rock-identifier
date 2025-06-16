@@ -13,36 +13,36 @@ struct DelightfulOnboardingView: View {
     @State private var animateSparkles = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
-    // Enhanced onboarding pages with emotion-focused copy
+    // Premium onboarding pages with concise, impactful copy
     let pages = [
         DelightfulOnboardingPage(
-            title: "Turn Every Walk Into\nA Treasure Hunt",
-            subtitle: "Discover the extraordinary hiding in plain sight",
-            description: "That ordinary-looking stone could be a 300-million-year-old fossil, a rare mineral, or a crystal with fascinating properties. Your next discovery is waiting.",
+            title: "Turn Walks Into\nTreasure Hunts",
+            subtitle: "Every stone tells an ancient story",
+            description: "Discover the extraordinary hiding in plain sight.",
             imageName: "onboarding-discover",
             primaryAction: "Begin Exploring",
             interactive: .sparklingCrystal
         ),
         DelightfulOnboardingPage(
-            title: "From Mystery to\nMastery in Seconds",
-            subtitle: "Unlock nature's secrets instantly",
-            description: "Our AI reads the geological story written in every rock. Watch as mysteries transform into fascinating knowledge right before your eyes.",
+            title: "From Mystery\nto Mastery",
+            subtitle: "Instant AI-powered identification",
+            description: "Watch as mysteries transform into fascinating knowledge.",
             imageName: "onboarding-details",
             primaryAction: "See How It Works",
             interactive: .scanningDemo
         ),
         DelightfulOnboardingPage(
-            title: "Every Discovery\nBecomes Part of Your Story",
-            subtitle: "Build your personal museum of wonders",
-            description: "Each rock you identify joins your growing collection. Track your finds, revisit their stories, and see your knowledge grow with every discovery.",
+            title: "Build Your\nPersonal Museum",
+            subtitle: "Every discovery becomes part of your story",
+            description: "Track your finds and watch your knowledge grow.",
             imageName: "onboarding-collection",
             primaryAction: "Start Collecting",
             interactive: .collectionPreview
         ),
         DelightfulOnboardingPage(
-            title: "Your First Rock Is Waiting\nTo Share Its Secrets",
+            title: "Your First Discovery\nAwaits",
             subtitle: "Ready to unlock nature's mysteries?",
-            description: "Point your camera at any rock, mineral, or crystal. In seconds, you'll discover its name, age, formation story, and the fascinating journey that brought it to you.",
+            description: "Point, tap, discover.",
             imageName: "onboarding-camera",
             primaryAction: "Start Discovering",
             interactive: .cameraPreview
@@ -308,7 +308,7 @@ struct DelightfulOnboardingPageView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            Spacer(minLength: 20)
+            Spacer(minLength: 40)
             
             // Enhanced image with interactive elements
             ZStack {
@@ -328,13 +328,13 @@ struct DelightfulOnboardingPageView: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 30)
+            .padding(.bottom, 40)
             
-            // Enhanced content section
-            VStack(spacing: 16) {
-                // Title with staggered animation
+            // Enhanced content section with premium spacing
+            VStack(spacing: 24) {
+                // Title with staggered animation - Large, bold white text
                 Text(page.title)
-                    .textStyle(.heroTitle)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 20)
@@ -342,29 +342,29 @@ struct DelightfulOnboardingPageView: View {
                     .opacity(titleAppeared ? 1.0 : 0.0)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.3), value: titleAppeared)
                 
-                // Subtitle with animation
+                // Subtitle with animation - Medium weight white text
                 Text(page.subtitle)
-                    .textStyle(.headline)
-                    .foregroundColor(.white.opacity(0.9))
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 30)
                     .offset(y: subtitleAppeared ? 0 : 15)
                     .opacity(subtitleAppeared ? 1.0 : 0.0)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.5), value: subtitleAppeared)
                 
-                // Description with animation
+                // Description with animation - Regular white text, slightly smaller
                 Text(page.description)
-                    .textStyle(.bodyLarge)
-                    .foregroundColor(.white.opacity(0.85))
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 35)
+                    .lineSpacing(2)
+                    .padding(.horizontal, 40)
                     .offset(y: descriptionAppeared ? 0 : 15)
                     .opacity(descriptionAppeared ? 1.0 : 0.0)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.7), value: descriptionAppeared)
             }
             
-            Spacer(minLength: 20)
+            Spacer(minLength: 30)
         }
         .onAppear {
             if isActive {
