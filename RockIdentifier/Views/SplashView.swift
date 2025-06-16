@@ -235,7 +235,7 @@ struct CrystalOutline: View {
             path.addLine(to: CGPoint(x: 270, y: 140))
             path.closeSubpath()
         }
-        .stroke(Color(hex: "FFD700"), lineWidth: 2)
+        .stroke(Color(hex: "8B0000"), lineWidth: 2)
         .opacity(0.7)
     }
 }
@@ -250,7 +250,7 @@ struct TopFacet: View {
             path.addLine(to: CGPoint(x: 270, y: 140))
             path.closeSubpath()
         }
-        .fill(Color(hex: "FFEB3B"))
+        .fill(Color(hex: "FF6B8A"))
     }
 }
 
@@ -265,7 +265,7 @@ struct SideFacets: View {
                 path.addLine(to: CGPoint(x: 170, y: 170))
                 path.closeSubpath()
             }
-            .fill(Color(hex: "FFC107"))
+            .fill(Color(hex: "FF3B5C"))
             
             // Right side facet
             Path { path in
@@ -274,7 +274,7 @@ struct SideFacets: View {
                 path.addLine(to: CGPoint(x: 170, y: 170))
                 path.closeSubpath()
             }
-            .fill(Color(hex: "FFC107"))
+            .fill(Color(hex: "FF3B5C"))
         }
     }
 }
@@ -290,7 +290,7 @@ struct BottomFacets: View {
                 path.addLine(to: CGPoint(x: 170, y: 170))
                 path.closeSubpath()
             }
-            .fill(Color(hex: "FF9800"))
+            .fill(Color(hex: "C51D2E"))
             
             // Right bottom facet
             Path { path in
@@ -299,7 +299,7 @@ struct BottomFacets: View {
                 path.addLine(to: CGPoint(x: 170, y: 170))
                 path.closeSubpath()
             }
-            .fill(Color(hex: "FF9800"))
+            .fill(Color(hex: "C51D2E"))
         }
     }
 }
@@ -314,7 +314,7 @@ struct CenterFacet: View {
             path.addLine(to: CGPoint(x: 170, y: 140))
             path.closeSubpath()
         }
-        .fill(Color(hex: "FFF176"))
+        .fill(Color(hex: "FFB6C1"))
     }
 }
 
@@ -340,7 +340,7 @@ struct ScanLine: View {
             Rectangle()
                 .frame(width: 260, height: 3)
                 .position(x: 170, y: yPosition)
-                .foregroundColor(Color.blue.opacity(0.1))
+                .foregroundColor(Color(hex: "FF3B5C").opacity(0.1))
                 .blur(radius: 2)
         }
     }
@@ -393,9 +393,3 @@ struct Reflections: View {
     }
 }
 
-// Preview
-struct SplashView_Previews: PreviewProvider {
-    static var previews: some View {
-        SplashView(onComplete: {})
-    }
-}
