@@ -92,7 +92,7 @@ struct RockIdentifierApp: App {
                     PaywallManager.shared.showSoftPaywall()
                 }
             }) {
-                OnboardingView(isPresented: $showOnboarding)
+                DelightfulOnboardingView(isPresented: $showOnboarding)
             }
             // Soft paywall sheet (can be dismissed)
             .sheet(isPresented: $appState.showSoftPaywall) {
