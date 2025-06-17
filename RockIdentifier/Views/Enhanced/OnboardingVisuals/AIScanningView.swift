@@ -87,11 +87,12 @@ struct AIScanningView: View {
                 .offset(x: scanLinePosition)
                 .animation(.linear(duration: 2.0).repeatForever(autoreverses: true), value: scanLinePosition)
             
-            // AI Analysis data points floating around rock
+            // AI Analysis data points floating around rock (better positioning)
             ForEach(0..<dataPointsVisible.count, id: \.self) { index in
                 if dataPointsVisible[index] {
                     AnalysisDataPoint(type: DataPointType.allCases[index])
                         .transition(.scale.combined(with: .opacity))
+                        .zIndex(Double(index)) // Ensure proper layering
                 }
             }
             
@@ -166,9 +167,9 @@ struct AIScanningView: View {
             pulseOpacity = 0.8
         }
         
-        // Animate data points appearing
+        // Animate data points appearing with better timing
         for i in 0..<dataPointsVisible.count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.5) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.8 + 1.0) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     dataPointsVisible[i] = true
                 }
@@ -184,18 +185,20 @@ struct AIScanningView: View {
             }
         }
         
-        // Reset and repeat data points
-        Timer.scheduledTimer(withTimeInterval: 8.0, repeats: true) { _ in
-            // Hide all data points
-            for i in 0..<dataPointsVisible.count {
-                dataPointsVisible[i] = false
+        // Reset and repeat data points with clearer timing
+        Timer.scheduledTimer(withTimeInterval: 12.0, repeats: true) { _ in
+            // Hide all data points with animation
+            withAnimation(.easeOut(duration: 0.5)) {
+                for i in 0..<dataPointsVisible.count {
+                    dataPointsVisible[i] = false
+                }
             }
             
-            // Show them again with delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // Show them again with staggered timing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 for i in 0..<dataPointsVisible.count {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.3) {
-                        withAnimation(.spring()) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.8) {
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             dataPointsVisible[i] = true
                         }
                     }
@@ -389,12 +392,12 @@ enum DataPointType: CaseIterable {
     
     var position: CGPoint {
         let positions: [CGPoint] = [
-            CGPoint(x: -80, y: -60),  // composition
-            CGPoint(x: 80, y: -40),   // hardness
-            CGPoint(x: -70, y: 50),   // density
-            CGPoint(x: 85, y: 30),    // structure
-            CGPoint(x: -60, y: 10),   // formation
-            CGPoint(x: 70, y: -70)    // classification
+            CGPoint(x: -70, y: -60),  // composition - top left
+            CGPoint(x: 70, y: -40),   // hardness - top right
+            CGPoint(x: -80, y: 20),   // density - middle left
+            CGPoint(x: 80, y: 10),    // structure - middle right
+            CGPoint(x: -60, y: 70),   // formation - bottom left
+            CGPoint(x: 60, y: 60)     // classification - bottom right
         ]
         return positions[DataPointType.allCases.firstIndex(of: self) ?? 0]
     }

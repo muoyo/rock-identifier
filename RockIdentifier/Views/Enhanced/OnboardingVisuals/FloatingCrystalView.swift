@@ -16,11 +16,12 @@ struct FloatingCrystalView: View {
     @State private var sparkleOpacity: Double = 0.0
     @State private var lightBeamRotation: Double = 0
     
-    let crystalColors = [
-        Color(hex: "E8D5FF"), // Light lavender
-        Color(hex: "B794F6"), // Medium purple
-        Color(hex: "805AD5"), // Deep purple
-        Color(hex: "553C9A")  // Dark purple base
+    // More realistic rock colors - less magical, more geological
+    let rockColors = [
+        Color(hex: "D4B896"), // Light sandstone
+        Color(hex: "A67C52"), // Medium brown
+        Color(hex: "8B4513"), // Saddle brown
+        Color(hex: "654321")  // Dark brown base
     ]
     
     var body: some View {
@@ -30,7 +31,7 @@ struct FloatingCrystalView: View {
                 .fill(
                     RadialGradient(
                         gradient: Gradient(colors: [
-                            crystalColors[1].opacity(0.3),
+                            rockColors[1].opacity(0.3),
                             Color.clear
                         ]),
                         center: .center,
@@ -42,59 +43,55 @@ struct FloatingCrystalView: View {
                 .scaleEffect(scaleEffect)
                 .animation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true), value: scaleEffect)
             
-            // Light beams rotating around crystal
+            // Light beams rotating around rock (kept as user likes them)
             ForEach(0..<6, id: \.self) { index in
                 LightBeam()
                     .rotationEffect(.degrees(lightBeamRotation + Double(index * 60)))
                     .opacity(0.6)
             }
             
-            // Main crystal structure
+            // Main rock specimen with magical effects
             ZStack {
-                // Crystal base (larger hexagonal structure)
-                CrystalShape(baseWidth: 80, height: 120, facets: 6)
+                // Realistic rock specimen shape
+                RealRockSpecimen()
                     .fill(
                         LinearGradient(
                             gradient: Gradient(stops: [
-                                .init(color: crystalColors[0], location: 0.0),
-                                .init(color: crystalColors[1], location: 0.3),
-                                .init(color: crystalColors[2], location: 0.7),
-                                .init(color: crystalColors[3], location: 1.0)
+                                .init(color: rockColors[0], location: 0.0),
+                                .init(color: rockColors[1], location: 0.3),
+                                .init(color: rockColors[2], location: 0.7),
+                                .init(color: rockColors[3], location: 1.0)
                             ]),
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .overlay(
-                        // Inner crystal structure
-                        CrystalShape(baseWidth: 60, height: 90, facets: 6)
-                            .fill(
-                                LinearGradient(
-                                    gradient: Gradient(colors: [
-                                        Color.white.opacity(0.4),
-                                        crystalColors[1].opacity(0.6),
-                                        crystalColors[2].opacity(0.3)
-                                    ]),
-                                    startPoint: .top,
-                                    endPoint: .bottom
-                                )
-                            )
+                        // Rock surface details
+                        RealRockSurfaceDetails()
                     )
                     .overlay(
-                        // Crystal highlights and reflections
-                        CrystalHighlights()
+                        // Rock highlights and texture
+                        RealRockSpecimen()
+                            .stroke(Color.white.opacity(0.3), lineWidth: 1)
                     )
+                    .frame(width: 120, height: 100)
                 
-                // Secondary crystal formations
+                // Magical crystal formations growing from the rock
                 CrystalCluster()
-                    .offset(x: -30, y: 20)
-                    .scaleEffect(0.4)
+                    .offset(x: -35, y: -25)
+                    .scaleEffect(0.3)
                     .opacity(0.8)
                 
                 CrystalCluster()
-                    .offset(x: 35, y: -15)
-                    .scaleEffect(0.3)
+                    .offset(x: 40, y: -20)
+                    .scaleEffect(0.25)
                     .opacity(0.7)
+                    
+                CrystalCluster()
+                    .offset(x: 20, y: 30)
+                    .scaleEffect(0.2)
+                    .opacity(0.6)
             }
             .scaleEffect(1.2)
             .rotationEffect(.degrees(rotationAngle))
@@ -145,6 +142,140 @@ struct FloatingCrystalView: View {
         // Light beam rotation
         withAnimation(.linear(duration: 12.0).repeatForever(autoreverses: false)) {
             lightBeamRotation = 360
+        }
+    }
+}
+
+// MARK: - Real Rock Specimen Shape
+
+struct RealRockSpecimen: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let width = rect.width
+        let height = rect.height
+        
+        // Create realistic irregular rock shape
+        path.move(to: CGPoint(x: center.x - width * 0.35, y: center.y - height * 0.2))
+        
+        // Top edge with natural rock irregularities
+        path.addCurve(
+            to: CGPoint(x: center.x - width * 0.1, y: center.y - height * 0.4),
+            control1: CGPoint(x: center.x - width * 0.25, y: center.y - height * 0.35),
+            control2: CGPoint(x: center.x - width * 0.15, y: center.y - height * 0.42)
+        )
+        
+        path.addCurve(
+            to: CGPoint(x: center.x + width * 0.2, y: center.y - height * 0.35),
+            control1: CGPoint(x: center.x + width * 0.05, y: center.y - height * 0.38),
+            control2: CGPoint(x: center.x + width * 0.15, y: center.y - height * 0.37)
+        )
+        
+        path.addCurve(
+            to: CGPoint(x: center.x + width * 0.4, y: center.y - height * 0.1),
+            control1: CGPoint(x: center.x + width * 0.3, y: center.y - height * 0.25),
+            control2: CGPoint(x: center.x + width * 0.38, y: center.y - height * 0.18)
+        )
+        
+        // Right edge
+        path.addCurve(
+            to: CGPoint(x: center.x + width * 0.35, y: center.y + height * 0.2),
+            control1: CGPoint(x: center.x + width * 0.42, y: center.y + height * 0.05),
+            control2: CGPoint(x: center.x + width * 0.4, y: center.y + height * 0.15)
+        )
+        
+        // Bottom edge
+        path.addCurve(
+            to: CGPoint(x: center.x + width * 0.1, y: center.y + height * 0.4),
+            control1: CGPoint(x: center.x + width * 0.25, y: center.y + height * 0.35),
+            control2: CGPoint(x: center.x + width * 0.18, y: center.y + height * 0.38)
+        )
+        
+        path.addCurve(
+            to: CGPoint(x: center.x - width * 0.2, y: center.y + height * 0.35),
+            control1: CGPoint(x: center.x - width * 0.05, y: center.y + height * 0.42),
+            control2: CGPoint(x: center.x - width * 0.15, y: center.y + height * 0.4)
+        )
+        
+        // Left edge back to start
+        path.addCurve(
+            to: CGPoint(x: center.x - width * 0.35, y: center.y - height * 0.2),
+            control1: CGPoint(x: center.x - width * 0.3, y: center.y + height * 0.1),
+            control2: CGPoint(x: center.x - width * 0.38, y: center.y - height * 0.05)
+        )
+        
+        return path
+    }
+}
+
+struct RealRockSurfaceDetails: View {
+    var body: some View {
+        ZStack {
+            // Mineral veins running through the rock
+            Path { path in
+                path.move(to: CGPoint(x: 15, y: 20))
+                path.addCurve(
+                    to: CGPoint(x: 75, y: 45),
+                    control1: CGPoint(x: 35, y: 25),
+                    control2: CGPoint(x: 55, y: 40)
+                )
+            }
+            .stroke(
+                LinearGradient(
+                    gradient: Gradient(colors: [
+                        Color(hex: "FFD700").opacity(0.6), // Gold vein
+                        Color(hex: "FFA500").opacity(0.4)  // Orange
+                    ]),
+                    startPoint: .leading,
+                    endPoint: .trailing
+                ),
+                lineWidth: 1.5
+            )
+            
+            // Secondary mineral streak
+            Path { path in
+                path.move(to: CGPoint(x: 25, y: 50))
+                path.addCurve(
+                    to: CGPoint(x: 65, y: 75),
+                    control1: CGPoint(x: 40, y: 60),
+                    control2: CGPoint(x: 50, y: 70)
+                )
+            }
+            .stroke(Color(hex: "C0C0C0").opacity(0.5), lineWidth: 1) // Silver streak
+            
+            // Rock texture spots
+            ForEach(0..<6, id: \.self) { index in
+                let positions: [CGPoint] = [
+                    CGPoint(x: 20, y: 25),
+                    CGPoint(x: 55, y: 15),
+                    CGPoint(x: 80, y: 35),
+                    CGPoint(x: 30, y: 65),
+                    CGPoint(x: 70, y: 55),
+                    CGPoint(x: 45, y: 75)
+                ]
+                
+                Circle()
+                    .fill(Color.black.opacity(0.2))
+                    .frame(width: CGFloat.random(in: 2...4), height: CGFloat.random(in: 2...4))
+                    .position(positions[index])
+            }
+            
+            // Natural rock fracture lines
+            Path { path in
+                path.move(to: CGPoint(x: 10, y: 40))
+                path.addLine(to: CGPoint(x: 40, y: 35))
+                path.addLine(to: CGPoint(x: 70, y: 45))
+            }
+            .stroke(Color.black.opacity(0.3), lineWidth: 0.5)
+            
+            // Surface weathering marks
+            ForEach(0..<3, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(Color.white.opacity(0.1))
+                    .frame(width: 12, height: 1)
+                    .offset(x: CGFloat(index * 15 - 15), y: CGFloat(index * 10 - 5))
+                    .rotationEffect(.degrees(Double(index * 15 - 15)))
+            }
         }
     }
 }

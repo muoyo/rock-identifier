@@ -20,14 +20,14 @@ struct CameraApertureView: View {
     
     var body: some View {
         ZStack {
-            // Camera viewfinder background
+            // Camera viewfinder background - more solid and less translucent
             RoundedRectangle(cornerRadius: 20)
                 .fill(
                     LinearGradient(
                         gradient: Gradient(colors: [
-                            Color.black.opacity(0.8),
-                            Color.black.opacity(0.6),
-                            Color.black.opacity(0.8)
+                            Color.black.opacity(0.95),
+                            Color.black.opacity(0.85),
+                            Color.black.opacity(0.95)
                         ]),
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -39,8 +39,8 @@ struct CameraApertureView: View {
                         .stroke(
                             LinearGradient(
                                 gradient: Gradient(colors: [
-                                    Color.white.opacity(0.3),
-                                    Color.gray.opacity(0.2)
+                                    Color.white.opacity(0.6),
+                                    Color.gray.opacity(0.4)
                                 ]),
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -48,38 +48,37 @@ struct CameraApertureView: View {
                             lineWidth: 2
                         )
                 )
-                .opacity(viewfinderOpacity)
             
             // Viewfinder grid lines
             ViewfinderGrid()
                 .opacity(0.4)
             
-            // Main camera aperture
+            // Main camera aperture with realistic blade count
             ZStack {
-                // Aperture blades creating realistic camera opening
-                ForEach(0..<8, id: \.self) { index in
+                // Aperture blades creating realistic camera opening (6 blades instead of 8)
+                ForEach(0..<6, id: \.self) { index in
                     ApertureBlade(index: index, scale: apertureScale)
                 }
                 
                 // Center opening
                 Circle()
                     .fill(Color.black)
-                    .frame(width: 30 * apertureScale, height: 30 * apertureScale)
+                    .frame(width: 35 * apertureScale, height: 35 * apertureScale)
                 
                 // Aperture reflection
                 Circle()
                     .fill(
                         RadialGradient(
                             gradient: Gradient(colors: [
-                                Color.white.opacity(0.1),
+                                Color.white.opacity(0.15),
                                 Color.clear
                             ]),
                             center: .topLeading,
                             startRadius: 0,
-                            endRadius: 15
+                            endRadius: 18
                         )
                     )
-                    .frame(width: 30 * apertureScale, height: 30 * apertureScale)
+                    .frame(width: 35 * apertureScale, height: 35 * apertureScale)
             }
             .scaleEffect(1.5)
             .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: apertureScale)
@@ -275,10 +274,10 @@ struct CameraApertureView: View {
             readyIndicatorScale = 1.2
         }
         
-        // Viewfinder breathing
-        withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
-            viewfinderOpacity = 1.0
-        }
+        // Removed viewfinder breathing for more stable appearance
+        // withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+        //     viewfinderOpacity = 1.0
+        // }
     }
 }
 
@@ -303,7 +302,7 @@ struct ApertureBlade: View {
             )
             .frame(width: 25, height: 8)
             .offset(y: -30 + (10 * scale)) // Blades close/open with scale
-            .rotationEffect(.degrees(Double(index * 45)))
+            .rotationEffect(.degrees(Double(index * 60))) // 60 degrees for 6 blades
     }
 }
 

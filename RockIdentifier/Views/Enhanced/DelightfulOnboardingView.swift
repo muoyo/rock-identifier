@@ -17,32 +17,32 @@ struct DelightfulOnboardingView: View {
     let pages = [
         DelightfulOnboardingPage(
             title: "Turn Walks Into\nTreasure Hunts",
-            subtitle: "Every stone tells an ancient story",
-            description: "Discover the extraordinary hiding in plain sight.",
+            subtitle: "", // Removed redundant subtitle
+            description: "Every stone tells an ancient story. Discover the extraordinary hiding in plain sight.",
             imageName: "onboarding-discover",
             primaryAction: "Begin Exploring",
             interactive: .sparklingCrystal
         ),
         DelightfulOnboardingPage(
             title: "From Mystery\nto Mastery",
-            subtitle: "Instant AI-powered identification",
-            description: "Watch as mysteries transform into fascinating knowledge.",
+            subtitle: "", // Removed redundant subtitle
+            description: "Instant AI-powered identification. Watch as mysteries transform into fascinating knowledge.",
             imageName: "onboarding-details",
             primaryAction: "See How It Works",
             interactive: .scanningDemo
         ),
         DelightfulOnboardingPage(
             title: "Build Your\nPersonal Museum",
-            subtitle: "Every discovery becomes part of your story",
-            description: "Track your finds and watch your knowledge grow.",
+            subtitle: "", // Removed redundant subtitle
+            description: "Every discovery becomes part of your story. Track your finds and watch your knowledge grow.",
             imageName: "onboarding-collection",
             primaryAction: "Start Collecting",
             interactive: .collectionPreview
         ),
         DelightfulOnboardingPage(
             title: "Your First Discovery\nAwaits",
-            subtitle: "Ready to unlock nature's mysteries?",
-            description: "Point, tap, discover.",
+            subtitle: "", // Removed redundant subtitle
+            description: "Ready to unlock nature's mysteries? Point, tap, discover.",
             imageName: "onboarding-camera",
             primaryAction: "Start Discovering",
             interactive: .cameraPreview
@@ -346,15 +346,17 @@ struct DelightfulOnboardingPageView: View {
                     .opacity(titleAppeared ? 1.0 : 0.0)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.3), value: titleAppeared)
                 
-                // Subtitle with animation - Medium weight white text
-                Text(page.subtitle)
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 30)
-                    .offset(y: subtitleAppeared ? 0 : 15)
-                    .opacity(subtitleAppeared ? 1.0 : 0.0)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.5), value: subtitleAppeared)
+                // Subtitle with animation - Only show if not empty
+                if !page.subtitle.isEmpty {
+                    Text(page.subtitle)
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 30)
+                        .offset(y: subtitleAppeared ? 0 : 15)
+                        .opacity(subtitleAppeared ? 1.0 : 0.0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.5), value: subtitleAppeared)
+                }
                 
                 // Description with animation - Regular white text, slightly smaller
                 Text(page.description)
