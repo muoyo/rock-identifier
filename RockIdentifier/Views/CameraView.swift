@@ -263,21 +263,8 @@ struct CameraView: View {
                                     shutterFlash = true
                                 }
                                 
-                                // Make sure the delegate callback is set up
-                                print("==> Ensuring photo capture delegate callback is set up")
-                                setupCamera() // Make sure callback is set up before capture
-                                
-                                // Take the photo with optimized settings
-                                if let photoOutput = photoOutput {
-                                    let settings = AVCapturePhotoSettings()
-                                    settings.isHighResolutionPhotoEnabled = true
-                                    if self.flashOn {
-                                        settings.flashMode = .on
-                                    }
-                                    
-                                    print("==> Initiating photo capture with \(self.photoCaptureDelegate)")
-                                    photoOutput.capturePhoto(with: settings, delegate: photoCaptureDelegate)
-                                }
+                                // Capture photo with proper error handling
+                                capturePhotoSafely()
                             }
                             else {
                                 // Show soft paywall instead of capturing photo when no identifications left (free tier only)
@@ -430,12 +417,18 @@ struct CameraView: View {
     }
     
     private func stopCameraSession() {
-        if let captureSession = captureSession, captureSession.isRunning {
-            DispatchQueue.global(qos: .userInitiated).async {
-                print("==> captureSession.stopRunning()")
-                captureSession.stopRunning()
-                self.captureSession = nil
-                self.photoOutput = nil
+        DispatchQueue.main.async {
+            if let captureSession = self.captureSession, captureSession.isRunning {
+                DispatchQueue.global(qos: .userInitiated).async {
+                    print("==> captureSession.stopRunning()")
+                    captureSession.stopRunning()
+                    
+                    // Set to nil on main thread to avoid race conditions
+                    DispatchQueue.main.async {
+                        self.captureSession = nil
+                        self.photoOutput = nil
+                    }
+                }
             }
         }
     }
@@ -461,35 +454,70 @@ struct CameraView: View {
     }
     
     private func setupCamera() {
-        // Initialize and configure the capture session
-        if let captureSession = captureSession {
+        // Ensure setup happens on main thread for state consistency
+        DispatchQueue.main.async {
+            // Initialize capture session if needed
+            if self.captureSession == nil {
+                self.captureSession = AVCaptureSession()
+            }
+            if self.photoOutput == nil {
+                self.photoOutput = AVCapturePhotoOutput()
+            }
+            
+            guard let captureSession = self.captureSession,
+                  let photoOutput = self.photoOutput else {
+                print("==> ERROR: Failed to initialize camera session")
+                return
+            }
+            
             // Configure the capture session for photo capture
             captureSession.beginConfiguration()
+            
+            // Remove existing inputs/outputs to avoid conflicts
+            captureSession.inputs.forEach { captureSession.removeInput($0) }
+            captureSession.outputs.forEach { captureSession.removeOutput($0) }
             
             // Set photo quality preset
             captureSession.sessionPreset = .photo
             
             // Add video input
-            if let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-               let videoInput = try? AVCaptureDeviceInput(device: videoDevice),
-               captureSession.canAddInput(videoInput) {
+            guard let videoDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
+                print("==> ERROR: Failed to create video input")
+                captureSession.commitConfiguration()
+                return
+            }
+            
+            if captureSession.canAddInput(videoInput) {
                 captureSession.addInput(videoInput)
                 
                 // Configure camera for rock photography
-                try? videoDevice.lockForConfiguration()
-                if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
-                    videoDevice.focusMode = .continuousAutoFocus
+                do {
+                    try videoDevice.lockForConfiguration()
+                    if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
+                        videoDevice.focusMode = .continuousAutoFocus
+                    }
+                    videoDevice.unlockForConfiguration()
+                } catch {
+                    print("==> WARNING: Failed to configure video device: \(error)")
                 }
-                videoDevice.unlockForConfiguration()
+            } else {
+                print("==> ERROR: Cannot add video input")
+                captureSession.commitConfiguration()
+                return
             }
             
             // Add photo output
-            if let photoOutput = photoOutput, captureSession.canAddOutput(photoOutput) {
+            if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
                 photoOutput.isHighResolutionCaptureEnabled = true
                 if #available(iOS 13.0, *) {
                     photoOutput.maxPhotoQualityPrioritization = .quality
                 }
+            } else {
+                print("==> ERROR: Cannot add photo output")
+                captureSession.commitConfiguration()
+                return
             }
             
             captureSession.commitConfiguration()
@@ -500,10 +528,110 @@ struct CameraView: View {
                     captureSession.startRunning()
                 }
             }
+            
+            // Set up the photo capture delegate callback
+            self.setupPhotoCaptureDelegate()
+            print("==> Camera setup completed")
+        }
+    }
+    
+    // Safe photo capture with proper error handling and session validation
+    private func capturePhotoSafely() {
+        DispatchQueue.main.async {
+            // Validate session state
+            guard let captureSession = self.captureSession,
+                  let photoOutput = self.photoOutput else {
+                print("==> ERROR: Camera session not available, attempting to reinitialize")
+                self.setupCamera()
+                
+                // Retry after short delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    self.capturePhotoRetry()
+                }
+                return
+            }
+            
+            // Check if session is running
+            guard captureSession.isRunning else {
+                print("==> ERROR: Camera session not running, attempting to start")
+                DispatchQueue.global(qos: .userInitiated).async {
+                    captureSession.startRunning()
+                    
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        self.capturePhotoRetry()
+                    }
+                }
+                return
+            }
+            
+            // Validate photo output is ready
+            guard photoOutput.connections.first(where: { $0.isActive }) != nil else {
+                print("==> ERROR: Photo output not properly connected")
+                self.setupCamera()
+                return
+            }
+            
+            // Ensure delegate callback is set up
+            if self.photoCaptureDelegate.onPhotoCapture == nil {
+                print("==> Setting up photo capture delegate callback")
+                self.setupPhotoCaptureDelegate()
+            }
+            
+            // Create photo settings
+            let settings = AVCapturePhotoSettings()
+            settings.isHighResolutionPhotoEnabled = true
+            
+            // Set flash mode if needed
+            if self.flashOn && photoOutput.supportedFlashModes.contains(.on) {
+                settings.flashMode = .on
+            }
+            
+            // Capture the photo
+            print("==> Initiating safe photo capture")
+            do {
+                photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate)
+            } catch {
+                print("==> ERROR: Photo capture failed: \(error)")
+                // Reset shutter flash on error
+                withAnimation {
+                    self.shutterFlash = false
+                }
+            }
+        }
+    }
+    
+    // Retry photo capture after session recovery
+    private func capturePhotoRetry() {
+        guard let captureSession = self.captureSession,
+              let photoOutput = self.photoOutput,
+              captureSession.isRunning else {
+            print("==> ERROR: Failed to recover camera session for retry")
+            // Reset shutter flash on failure
+            withAnimation {
+                self.shutterFlash = false
+            }
+            return
         }
         
-        // Set up the photo capture delegate callback
-        print("==> Setting up photoCaptureDelegate callback")
+        // Ensure delegate callback is set up
+        if self.photoCaptureDelegate.onPhotoCapture == nil {
+            self.setupPhotoCaptureDelegate()
+        }
+        
+        // Create photo settings
+        let settings = AVCapturePhotoSettings()
+        settings.isHighResolutionPhotoEnabled = true
+        
+        if self.flashOn && photoOutput.supportedFlashModes.contains(.on) {
+            settings.flashMode = .on
+        }
+        
+        print("==> Retrying photo capture")
+        photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate)
+    }
+    
+    // Setup photo capture delegate callback
+    private func setupPhotoCaptureDelegate() {
         photoCaptureDelegate.onPhotoCapture = { image in
             print("==> onPhotoCapture called with image: \(image.size.width) x \(image.size.height)")
             // Resize image to appropriate size for rock identification
@@ -520,7 +648,6 @@ struct CameraView: View {
                 print("==> ERROR: Failed to resize image")
             }
         }
-        print("==> Camera setup completed")
     }
     
     func checkCameraPermission() {
