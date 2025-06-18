@@ -3,58 +3,47 @@
 // Muoyo Okome
 
 import SwiftUI
-import AVFoundation
 
 struct DelightfulOnboardingView: View {
     @Binding var isPresented: Bool
     @State private var currentPage = 0
-    @State private var showPermissionAlert = false
     @State private var sparkleLocations: [CGPoint] = []
     @State private var animateSparkles = false
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
-    // Premium onboarding pages with concise, impactful copy
+    // Optimized 3-screen onboarding with clear narrative arc
     let pages = [
         DelightfulOnboardingPage(
-            title: "Turn Walks Into\nTreasure Hunts",
-            subtitle: "", // Removed redundant subtitle
-            description: "Every stone tells an ancient story. Discover the extraordinary hiding in plain sight.",
+            title: "Identify Any Rock",
+            subtitle: "AI-powered rock and mineral identification",
+            description: "", // Removed redundant description - subtitle is enough
             imageName: "onboarding-discover",
             primaryAction: "Begin Exploring",
             interactive: .sparklingCrystal
         ),
         DelightfulOnboardingPage(
-            title: "From Mystery\nto Mastery",
-            subtitle: "", // Removed redundant subtitle
-            description: "Instant AI-powered identification. Watch as mysteries transform into fascinating knowledge.",
+            title: "AI Tells You Everything",
+            subtitle: "Comprehensive details in seconds",
+            description: "", // Removed redundant description
             imageName: "onboarding-details",
             primaryAction: "See How It Works",
             interactive: .scanningDemo
         ),
         DelightfulOnboardingPage(
-            title: "Build Your\nPersonal Museum",
-            subtitle: "", // Removed redundant subtitle
-            description: "Every discovery becomes part of your story. Track your finds and watch your knowledge grow.",
+            title: "Build Your Dream Collection",
+            subtitle: "Start now for free",
+            description: "", // Removed redundant description
             imageName: "onboarding-collection",
-            primaryAction: "Start Collecting",
+            primaryAction: "Start for Free",
             interactive: .collectionPreview
-        ),
-        DelightfulOnboardingPage(
-            title: "Your First Discovery\nAwaits",
-            subtitle: "", // Removed redundant subtitle
-            description: "Ready to unlock nature's mysteries? Point, tap, discover.",
-            imageName: "onboarding-camera",
-            primaryAction: "Start Discovering",
-            interactive: .cameraPreview
         )
     ]
     
-    // Enhanced gradient colors with more vibrancy
+    // Enhanced gradient colors with more vibrancy (3 screens)
     let enhancedGradients = [
         [Color(hex: "667eea"), Color(hex: "764ba2")], // Purple Discovery
         [Color(hex: "f093fb"), Color(hex: "f5576c")], // Pink Knowledge  
-        [Color(hex: "4facfe"), Color(hex: "00f2fe")], // Blue Collection
-        [Color(hex: "43e97b"), Color(hex: "38f9d7")]  // Green Ready
+        [Color(hex: "4facfe"), Color(hex: "00f2fe")]  // Blue Collection
     ]
     
     var body: some View {
@@ -137,8 +126,8 @@ struct DelightfulOnboardingView: View {
                                 currentPage += 1
                             }
                         } else {
-                            // Enhanced permission request
-                            requestCameraPermissionWithDelight()
+                            // Complete onboarding - camera permission handled naturally on first use
+                            completeOnboarding()
                         }
                     } label: {
                         HStack(spacing: 8) {
@@ -208,46 +197,10 @@ struct DelightfulOnboardingView: View {
                 }
             }
         }
-        .alert(isPresented: $showPermissionAlert) {
-            Alert(
-                title: Text("Unlock Your Camera's Potential"),
-                message: Text("To identify rocks and minerals, Rock Identifier needs access to your camera. This helps us capture the clearest images for the most accurate identifications."),
-                primaryButton: .default(Text("Open Settings")) {
-                    PermissionManager.shared.openSettings()
-                    completeOnboarding()
-                },
-                secondaryButton: .cancel(Text("Maybe Later")) {
-                    completeOnboarding()
-                }
-            )
-        }
+
     }
     
-    // MARK: - Enhanced Permission Request
-    private func requestCameraPermissionWithDelight() {
-        // Add anticipation with haptic feedback
-        HapticManager.shared.successFeedback()
-        
-        PermissionManager.shared.requestCameraPermission { granted in
-            DispatchQueue.main.async {
-                if granted {
-                    // Celebrate with sparkle effect
-                    createCelebrationSparkles()
-                    
-                    // Delay completion to show celebration
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                        completeOnboarding()
-                    }
-                } else {
-                    if AVCaptureDevice.authorizationStatus(for: .video) == .denied {
-                        showPermissionAlert = true
-                    } else {
-                        completeOnboarding()
-                    }
-                }
-            }
-        }
-    }
+
     
     // MARK: - Sparkle Effects
     private func createSparkleEffect() {
@@ -316,15 +269,13 @@ struct DelightfulOnboardingPageView: View {
                 // Dynamic visual based on page
                 switch pageIndex {
                 case 0:
-                    FloatingCrystalView()
+                    PerformantFloatingCrystalView()
                 case 1:
                     AIScanningView()
                 case 2:
                     DynamicCollectionView()
-                case 3:
-                    CameraApertureView()
                 default:
-                    FloatingCrystalView()
+                    PerformantFloatingCrystalView()
                 }
             }
             .frame(height: 280)
@@ -346,28 +297,28 @@ struct DelightfulOnboardingPageView: View {
                     .opacity(titleAppeared ? 1.0 : 0.0)
                     .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.3), value: titleAppeared)
                 
-                // Subtitle with animation - Only show if not empty
-                if !page.subtitle.isEmpty {
-                    Text(page.subtitle)
-                        .font(.system(size: 18, weight: .medium, design: .rounded))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 30)
-                        .offset(y: subtitleAppeared ? 0 : 15)
-                        .opacity(subtitleAppeared ? 1.0 : 0.0)
-                        .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.5), value: subtitleAppeared)
-                }
-                
-                // Description with animation - Regular white text, slightly smaller
-                Text(page.description)
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                // Subtitle with animation - Show for all pages now
+                Text(page.subtitle)
+                    .font(.system(size: 18, weight: .medium, design: .rounded))
                     .foregroundColor(.white.opacity(0.9))
                     .multilineTextAlignment(.center)
-                    .lineSpacing(2)
-                    .padding(.horizontal, 40)
-                    .offset(y: descriptionAppeared ? 0 : 15)
-                    .opacity(descriptionAppeared ? 1.0 : 0.0)
-                    .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.7), value: descriptionAppeared)
+                    .padding(.horizontal, 30)
+                    .offset(y: subtitleAppeared ? 0 : 15)
+                    .opacity(subtitleAppeared ? 1.0 : 0.0)
+                    .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.5), value: subtitleAppeared)
+                
+                // Description with animation - Only show if not empty
+                if !page.description.isEmpty {
+                    Text(page.description)
+                        .font(.system(size: 16, weight: .regular, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(2)
+                        .padding(.horizontal, 40)
+                        .offset(y: descriptionAppeared ? 0 : 15)
+                        .opacity(descriptionAppeared ? 1.0 : 0.0)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.7), value: descriptionAppeared)
+                }
             }
             
             Spacer(minLength: 30)
@@ -547,7 +498,6 @@ enum InteractiveType {
     case sparklingCrystal
     case scanningDemo
     case collectionPreview
-    case cameraPreview
 }
 
 struct ParticleData: Identifiable {

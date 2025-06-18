@@ -2,7 +2,7 @@
 // AIScanningView.swift
 // Rock Identifier: Crystal ID
 //
-// AI scanning animation with realistic rock specimen
+// AI scanning animation with realistic rock specimen and improved data point positioning
 // Muoyo Okome
 //
 
@@ -22,7 +22,7 @@ struct AIScanningView: View {
             ScanningGrid()
                 .opacity(0.3)
             
-            // Main rock specimen being analyzed
+            // Main rock specimen being analyzed - NO ROTATION (different from Screen 1)
             ZStack {
                 // Rock shadow
                 RockSpecimen()
@@ -87,7 +87,7 @@ struct AIScanningView: View {
                 .offset(x: scanLinePosition)
                 .animation(.linear(duration: 2.0).repeatForever(autoreverses: true), value: scanLinePosition)
             
-            // AI Analysis data points floating around rock (better positioning)
+            // AI Analysis data points positioned MUCH closer to rock perimeter
             ForEach(0..<dataPointsVisible.count, id: \.self) { index in
                 if dataPointsVisible[index] {
                     AnalysisDataPoint(type: DataPointType.allCases[index])
@@ -167,9 +167,9 @@ struct AIScanningView: View {
             pulseOpacity = 0.8
         }
         
-        // Animate data points appearing with better timing
+        // Animate data points appearing with better timing - ALL 6 WILL SHOW
         for i in 0..<dataPointsVisible.count {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.8 + 1.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.6 + 1.0) {
                 withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                     dataPointsVisible[i] = true
                 }
@@ -197,7 +197,7 @@ struct AIScanningView: View {
             // Show them again with staggered timing
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
                 for i in 0..<dataPointsVisible.count {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.8) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.6) {
                         withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
                             dataPointsVisible[i] = true
                         }
@@ -391,15 +391,19 @@ enum DataPointType: CaseIterable {
     }
     
     var position: CGPoint {
-        let positions: [CGPoint] = [
-            CGPoint(x: -70, y: -60),  // composition - top left
-            CGPoint(x: 70, y: -40),   // hardness - top right
-            CGPoint(x: -80, y: 20),   // density - middle left
-            CGPoint(x: 80, y: 10),    // structure - middle right
-            CGPoint(x: -60, y: 70),   // formation - bottom left
-            CGPoint(x: 60, y: 60)     // classification - bottom right
-        ]
-        return positions[DataPointType.allCases.firstIndex(of: self) ?? 0]
+        // SIMPLE circle positioning - all 6 properties around rock perimeter
+        // Rock is at center, just put them in a simple circle at 80px radius
+        let radius: CGFloat = 120
+        let angleStep = 2 * Double.pi / 6 // 60 degrees between each
+        let startAngle = -Double.pi / 2 // Start at top
+        
+        let index = DataPointType.allCases.firstIndex(of: self) ?? 0
+        let angle = startAngle + Double(index) * angleStep
+        
+        return CGPoint(
+            x: 85 + Foundation.cos(angle) * radius,  // Add center offset
+            y: 85 + Foundation.sin(angle) * radius   // Add center offset
+        )
     }
 }
 
