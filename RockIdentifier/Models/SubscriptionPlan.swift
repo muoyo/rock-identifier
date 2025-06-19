@@ -25,9 +25,9 @@ enum SubscriptionPlan: String, Codable {
         case .free:
             return ""
         case .weekly:
-            return "com.appmagic.rockidentifier.weekly"
+            return "com.appmagic.rockidentifier.weekly_"
         case .yearly:
-            return "com.appmagic.rockidentifier.yearly"
+            return "com.appmagic.rockidentifier.yearly_"
         }
     }
     
