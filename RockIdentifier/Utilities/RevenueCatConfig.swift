@@ -16,8 +16,8 @@ struct RevenueCatConfig {
     // String constants (to avoid duplicating strings throughout the app)
     struct Identifiers {
         // Product identifiers
-        static let weeklySubscription = "com.appmagic.rockidentifier.weekly_"
-        static let yearlySubscription = "com.appmagic.rockidentifier.yearly_"
+        static let weeklySubscription = "com.appmagic.rockidentifier.weekly_2"
+        static let yearlySubscription = "com.appmagic.rockidentifier.yearly_2"
         
         // Entitlement identifiers
         static let premiumAccess = "premium_access"
