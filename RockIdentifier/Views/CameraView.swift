@@ -491,11 +491,14 @@ struct CameraView: View {
             if captureSession.canAddInput(videoInput) {
                 captureSession.addInput(videoInput)
                 
-                // Configure camera for rock photography
+                // Configure camera for rock photography with validation
                 do {
                     try videoDevice.lockForConfiguration()
                     if videoDevice.isFocusModeSupported(.continuousAutoFocus) {
                         videoDevice.focusMode = .continuousAutoFocus
+                        print("==> Continuous autofocus enabled")
+                    } else {
+                        print("==> Continuous autofocus not supported, using default")
                     }
                     videoDevice.unlockForConfiguration()
                 } catch {
@@ -507,12 +510,27 @@ struct CameraView: View {
                 return
             }
             
-            // Add photo output
+            // Add photo output with validation
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
-                photoOutput.isHighResolutionCaptureEnabled = true
+                
+                // Only enable high resolution if supported
+                if photoOutput.isHighResolutionCaptureSupported {
+                    photoOutput.isHighResolutionCaptureEnabled = true
+                    print("==> High resolution capture setup enabled")
+                } else {
+                    print("==> High resolution capture not supported in setup")
+                }
+                
+                // Validate photo quality prioritization
                 if #available(iOS 13.0, *) {
-                    photoOutput.maxPhotoQualityPrioritization = .quality
+                    let supportedPriorities = photoOutput.supportedPhotoQualityPrioritizations
+                    if supportedPriorities.contains(.quality) {
+                        photoOutput.maxPhotoQualityPrioritization = .quality
+                        print("==> Quality prioritization enabled")
+                    } else {
+                        print("==> Quality prioritization not supported")
+                    }
                 }
             } else {
                 print("==> ERROR: Cannot add photo output")
@@ -577,26 +595,34 @@ struct CameraView: View {
                 self.setupPhotoCaptureDelegate()
             }
             
-            // Create photo settings
+            // Create photo settings with device validation
             let settings = AVCapturePhotoSettings()
-            settings.isHighResolutionPhotoEnabled = true
             
-            // Set flash mode if needed
+            // Only enable high resolution if supported by this device
+            if photoOutput.isHighResolutionCaptureEnabled {
+                settings.isHighResolutionPhotoEnabled = true
+                print("==> High resolution capture enabled")
+            } else {
+                print("==> High resolution capture not supported on this device")
+            }
+            
+            // Set flash mode if needed and supported
             if self.flashOn && photoOutput.supportedFlashModes.contains(.on) {
                 settings.flashMode = .on
             }
             
-            // Capture the photo
-            print("==> Initiating safe photo capture")
-            do {
-                photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate)
-            } catch {
-                print("==> ERROR: Photo capture failed: \(error)")
-                // Reset shutter flash on error
+            // CRITICAL: Validate settings before capture
+            guard photoOutput.connection(with: .video) != nil else {
+                print("==> ERROR: No video connection available")
                 withAnimation {
                     self.shutterFlash = false
                 }
+                return
             }
+            
+            // Capture the photo
+            print("==> Initiating validated photo capture")
+            photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate)
         }
     }
     
@@ -618,15 +644,28 @@ struct CameraView: View {
             self.setupPhotoCaptureDelegate()
         }
         
-        // Create photo settings
+        // Create validated photo settings for retry
         let settings = AVCapturePhotoSettings()
-        settings.isHighResolutionPhotoEnabled = true
+        
+        // Only enable high resolution if supported
+        if photoOutput.isHighResolutionCaptureEnabled {
+            settings.isHighResolutionPhotoEnabled = true
+        }
         
         if self.flashOn && photoOutput.supportedFlashModes.contains(.on) {
             settings.flashMode = .on
         }
         
-        print("==> Retrying photo capture")
+        // Validate connection before retry
+        guard photoOutput.connection(with: .video) != nil else {
+            print("==> ERROR: No video connection for retry")
+            withAnimation {
+                self.shutterFlash = false
+            }
+            return
+        }
+        
+        print("==> Retrying photo capture with validated settings")
         photoOutput.capturePhoto(with: settings, delegate: self.photoCaptureDelegate)
     }
     
