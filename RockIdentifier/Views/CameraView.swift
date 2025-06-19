@@ -117,12 +117,12 @@ struct CameraView: View {
                                    (remainingIdentifications < 2 ? Color.orange.opacity(0.7) : Color.green.opacity(0.3)), lineWidth: 1)
                     )
                     .padding(.leading)
-                    .onTapGesture(count: 5) {
+                    /* .onTapGesture(count: 5) {
                         // Handle secret developer mode activation
                         NotificationCenter.default.post(name: NSNotification.Name("ToggleDeveloperMode"), object: nil)
                         // Haptic feedback for confirmation
                         HapticManager.shared.successFeedback()
-                    }
+                    } */
                         
                         Spacer()
                         
