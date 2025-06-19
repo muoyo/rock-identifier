@@ -514,23 +514,15 @@ struct CameraView: View {
             if captureSession.canAddOutput(photoOutput) {
                 captureSession.addOutput(photoOutput)
                 
-                // Only enable high resolution if supported
-                if photoOutput.isHighResolutionCaptureSupported {
-                    photoOutput.isHighResolutionCaptureEnabled = true
-                    print("==> High resolution capture setup enabled")
-                } else {
-                    print("==> High resolution capture not supported in setup")
-                }
+                // Try to enable high resolution capture (will silently fail if not supported)
+                photoOutput.isHighResolutionCaptureEnabled = true
+                print("==> High resolution capture setup: \(photoOutput.isHighResolutionCaptureEnabled ? "enabled" : "not supported")")
                 
                 // Validate photo quality prioritization
                 if #available(iOS 13.0, *) {
-                    let supportedPriorities = photoOutput.supportedPhotoQualityPrioritizations
-                    if supportedPriorities.contains(.quality) {
-                        photoOutput.maxPhotoQualityPrioritization = .quality
-                        print("==> Quality prioritization enabled")
-                    } else {
-                        print("==> Quality prioritization not supported")
-                    }
+                    // Try to set quality prioritization (will use default if not supported)
+                    photoOutput.maxPhotoQualityPrioritization = .quality
+                    print("==> Photo quality prioritization set to: \(photoOutput.maxPhotoQualityPrioritization.rawValue)")
                 }
             } else {
                 print("==> ERROR: Cannot add photo output")
