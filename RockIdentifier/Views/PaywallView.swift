@@ -364,7 +364,7 @@ struct PaywallView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
                     .fill(StyleGuide.Colors.roseQuartzPink)
-                    .frame(height: 90)
+                    .frame(height: 80)
                     .mineralShadow(StyleGuide.Colors.roseQuartzPink, intensity: .large)
                 
                 if isLoading {
@@ -373,7 +373,7 @@ struct PaywallView: View {
                         .scaleEffect(1.2)
                 } else {
                     Text(selectedPlan == .yearly ? "Continue" : "Start Free Trial")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
             }
@@ -648,17 +648,17 @@ struct PaywallView: View {
                             if let originalPrice = originalPrice {
                                 Text(originalPrice)
                                     .strikethrough()
-                                    .textStyle(.captionMedium)
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(.secondary)
                             }
                             
                             if isTrial && showTrial {
                                 Text("then \(plan.price)")
-                                    .textStyle(.captionMedium)
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(.secondary)
                             } else {
                                 Text(plan.price)
-                                    .textStyle(.captionMedium)
+                                    .font(.system(size: 16, weight: .medium))
                                     .foregroundColor(.secondary)
                             }
                         }
@@ -678,11 +678,12 @@ struct PaywallView: View {
                     } else if isTrial && showTrial {
                         HStack(spacing: 6) {
                             Text("FREE")
-                                .font(.system(size: 22, weight: .semibold, design: .rounded))
+                                .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(.primary)
+                                // .foregroundColor(StyleGuide.Colors.roseQuartzPink)
                             
                             Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 20, weight: .bold))
+                                .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(StyleGuide.Colors.roseQuartzPink)
                         }
                     }
