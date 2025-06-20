@@ -921,7 +921,7 @@ struct PaywallView: View {
     }
     
     private func showPrivacy() {
-        if let url = URL(string: "https://appmagic.co/apps/privacypolicy.html") {
+        if let url = URL(string: "https://appmagic.co/app/privacypolicy.html") {
             UIApplication.shared.open(url)
         }
     }
@@ -969,12 +969,5 @@ struct InteractiveDismissModifier: ViewModifier {
         } else {
             content
         }
-    }
-}
-
-struct PaywallView_Previews: PreviewProvider {
-    static var previews: some View {
-        PaywallView(isDismissable: true)
-            .environmentObject(SubscriptionManager())
     }
 }

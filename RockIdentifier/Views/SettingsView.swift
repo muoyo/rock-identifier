@@ -94,7 +94,7 @@ struct SettingsView: View {
                 
                 Section(header: Text("Legal")) {
                     Button(action: {
-                        if let url = URL(string: "https://appmagic.co/apps/privacypolicy.html") {
+                        if let url = URL(string: "https://appmagic.co/app/privacypolicy.html") {
                             UIApplication.shared.open(url)
                         }
                     }) {
