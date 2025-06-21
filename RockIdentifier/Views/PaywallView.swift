@@ -649,17 +649,17 @@ struct PaywallView: View {
                                 Text(originalPrice)
                                     .strikethrough()
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
                             }
                             
                             if isTrial && showTrial {
                                 Text("then \(plan.price)")
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
                             } else {
                                 Text(plan.price)
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
                             }
                         }
                     }
@@ -676,7 +676,7 @@ struct PaywallView: View {
                             .mineralCornerRadius(.pill)
                             .mineralShadow(StyleGuide.Colors.roseQuartzPink, intensity: .small)
                     } else if isTrial && showTrial {
-                        HStack(spacing: 6) {
+                        /* HStack(spacing: 6) {
                             Text("FREE")
                                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                                 .foregroundColor(.primary)
@@ -685,7 +685,7 @@ struct PaywallView: View {
                             Image(systemName: "checkmark.circle.fill")
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(StyleGuide.Colors.roseQuartzPink)
-                        }
+                        } */
                     }
                 }
                 
