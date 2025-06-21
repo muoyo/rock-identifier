@@ -144,6 +144,9 @@ struct ContentView: View {
         case .processing:
             print("Processing identification")
             
+        case .retrying(let attempt, let totalAttempts):
+            print("Retrying identification: attempt \(attempt + 1) of \(totalAttempts + 1)")
+            
         case .success:
             print("Identification complete")
             // Hide processing view first

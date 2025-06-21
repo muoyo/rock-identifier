@@ -11,6 +11,7 @@ import UIKit
 enum IdentificationState: Equatable {
     case idle
     case processing
+    case retrying(attempt: Int, totalAttempts: Int)
     case success(RockIdentificationResult)
     case error(String)
     
@@ -20,6 +21,8 @@ enum IdentificationState: Equatable {
             return true
         case (.processing, .processing):
             return true
+        case (.retrying(let lhsAttempt, let lhsTotal), .retrying(let rhsAttempt, let rhsTotal)):
+            return lhsAttempt == rhsAttempt && lhsTotal == rhsTotal
         case (.success(let lhsResult), .success(let rhsResult)):
             return lhsResult.id == rhsResult.id
         case (.error(let lhsError), .error(let rhsError)):
@@ -30,14 +33,19 @@ enum IdentificationState: Equatable {
     }
 }
 
-class RockIdentificationService: ObservableObject {
+class RockIdentificationService: ObservableObject, ConnectionRequestDelegate {
     @Published var state: IdentificationState = .idle
     @Published var currentImage: UIImage?
     @Published var useMockData: Bool = false
     
     private let connectionRequest = ConnectionRequest()
+    private let enhancedConnection = EnhancedConnectionRequest()
     private let apiUrl = "https://appquestions.co/gem/openai_proxy.php"
     private let sharedSecretKey = "pEDaZ/K0ITlKb8KALrm73TeNTZXZFEQl3jvIVFNgbEZ4WEjUO6y+gFM6SNKHjxlP"
+    
+    init() {
+        enhancedConnection.delegate = self
+    }
     
     // Improved single-step prompt - much shorter but comprehensive
     private let systemPrompt = """
@@ -218,7 +226,7 @@ class RockIdentificationService: ObservableObject {
             "hash": hash
         ]
         
-        connectionRequest.fetchData(apiUrl, parameters: parameters) { [weak self] data, error in
+        enhancedConnection.fetchDataWithRetry(apiUrl, parameters: parameters) { [weak self] data, error in
             guard let self = self else { return }
             
             DispatchQueue.main.async {
@@ -430,6 +438,28 @@ class RockIdentificationService: ObservableObject {
     func setUseMockData(_ useMock: Bool) {
         useMockData = useMock
         print("Rock identification mode: \(useMock ? "MOCK DATA" : "REAL API")")
+    }
+    
+    // MARK: - ConnectionRequestDelegate Methods
+    
+    func connectionDidStartRetry(attempt: Int, maxAttempts: Int) {
+        DispatchQueue.main.async {
+            self.state = .retrying(attempt: attempt, totalAttempts: maxAttempts)
+            print("🔄 Retry attempt \(attempt)/\(maxAttempts)")
+        }
+    }
+    
+    func connectionDidCompleteAllRetries() {
+        print("✅ Connection retry cycle completed")
+    }
+    
+    // MARK: - Additional Helper Methods
+    
+    func cancelIdentification() {
+        enhancedConnection.cancelRequest()
+        connectionRequest.cancelRequest()
+        state = .idle
+        print("❌ Identification cancelled by user")
     }
 }
 

@@ -15,12 +15,18 @@ struct ProcessingView: View {
     @State private var shouldShowResult: Bool = false
     @State private var hasError: Bool = false
     @State private var errorMessage: String = ""
+    @State private var retryAttempt: Int = 0
+    @State private var maxRetryAttempts: Int = 3
+    @State private var isRetrying: Bool = false
     
     // Captured rock image (passed from CameraView)
     var capturedImage: UIImage?
     
     // Callback for when processing is complete
     var onProcessingComplete: ((RockIdentificationResult) -> Void)?
+    
+    // Rock identification service
+    @StateObject private var rockService = RockIdentificationService()
     
     // Mock identification result (for testing without API)
     @State private var identificationResult: RockIdentificationResult? = nil
@@ -48,7 +54,8 @@ struct ProcessingView: View {
         case checkingProperties = 3
         case comparingDatabase = 4
         case finalizing = 5
-        case complete = 6
+        case retrying = 6
+        case complete = 7
         
         var title: String {
             switch self {
@@ -58,6 +65,7 @@ struct ProcessingView: View {
             case .checkingProperties: return "Checking Properties"
             case .comparingDatabase: return "Comparing Database"
             case .finalizing: return "Finalizing Results"
+            case .retrying: return "Retrying Connection"
             case .complete: return "Identification Complete!"
             }
         }
@@ -70,6 +78,7 @@ struct ProcessingView: View {
             case .checkingProperties: return "Analyzing hardness, luster, and physical characteristics..."
             case .comparingDatabase: return "Comparing with our geological database of specimens..."
             case .finalizing: return "Assembling detailed information about your rock..."
+            case .retrying: return "Connection interrupted, attempting to reconnect..."
             case .complete: return "Your rock has been successfully identified!"
             }
         }
@@ -82,6 +91,7 @@ struct ProcessingView: View {
             case .checkingProperties: return 0.7
             case .comparingDatabase: return 0.85
             case .finalizing: return 0.95
+            case .retrying: return 0.7 // Reset progress during retry
             case .complete: return 1.0
             }
         }
@@ -209,6 +219,21 @@ struct ProcessingView: View {
                             .padding(.horizontal)
                             .id(currentStage.rawValue) // Force redraw when stage changes
                             .transition(.opacity)
+                        
+                        // Retry information
+                        if isRetrying && retryAttempt > 0 {
+                            HStack {
+                                Image(systemName: "arrow.clockwise")
+                                    .foregroundColor(.orange)
+                                    .rotationEffect(.degrees(rotationAngle))
+                                Text("Attempt \(retryAttempt + 1) of \(maxRetryAttempts + 1)")
+                                    .foregroundColor(.orange.opacity(0.9))
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                            }
+                            .padding(.top, 5)
+                            .transition(.opacity)
+                        }
                     }
                     .padding(.bottom, 10)
                     
@@ -243,6 +268,8 @@ struct ProcessingView: View {
                             title: Text("Cancel Identification?"),
                             message: Text("Are you sure you want to cancel the rock identification process?"),
                             primaryButton: .destructive(Text("Yes, Cancel")) {
+                                // Cancel the rock identification service
+                                rockService.cancelIdentification()
                                 withAnimation(.easeInOut(duration: 0.3)) {
                                     isVisible = false
                                 }
@@ -297,6 +324,9 @@ struct ProcessingView: View {
         }
         .onReceive(processingTimer) { _ in
             updateProcessingAnimation()
+        }
+        .onReceive(rockService.$state) { state in
+            handleRockServiceStateChange(state)
         }
         .onAppear {
             startProcessingAnimation()
@@ -366,13 +396,56 @@ struct ProcessingView: View {
     // MARK: - Rock Identification
     
     private func startIdentification() {
-        if capturedImage == nil {
-            // If no image, simulate processing with mock data for testing
-            simulateProcessing()
-        } else {
-            // In a real implementation, this would connect to the RockIdentificationService
-            // For now, we'll simulate the process
-            simulateProcessing()
+        guard let image = capturedImage else {
+            handleError(message: "No image available for identification")
+            return
+        }
+        
+        // Start actual rock identification using the service
+        rockService.identifyRock(from: image)
+    }
+    
+    private func handleRockServiceStateChange(_ state: IdentificationState) {
+        switch state {
+        case .idle:
+            // Reset to initial state
+            break
+            
+        case .processing:
+            // Continue with visual processing animation
+            if hasError {
+                withAnimation {
+                    hasError = false
+                    errorMessage = ""
+                }
+            }
+            
+        case .retrying(let attempt, let totalAttempts):
+            // Handle retry state
+            withAnimation {
+                isRetrying = true
+                retryAttempt = attempt
+                maxRetryAttempts = totalAttempts
+                currentStage = .retrying
+                analysisProgress = 0.7 // Reset progress during retry
+            }
+            
+        case .success(let result):
+            // Handle successful identification
+            identificationResult = result
+            withAnimation {
+                isRetrying = false
+                currentStage = .complete
+                analysisProgress = 1.0
+            }
+            completeIdentification()
+            
+        case .error(let message):
+            // Handle error
+            withAnimation {
+                isRetrying = false
+            }
+            handleError(message: message)
         }
     }
     
