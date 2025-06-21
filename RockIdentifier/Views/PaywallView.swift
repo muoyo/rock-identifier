@@ -21,6 +21,37 @@ struct PaywallView: View {
     @ObservedObject private var appState = AppState.shared
     var isDismissable: Bool = true
     
+    // Computed properties for App Store compliant button text with visual hierarchy
+    private var buttonPrimaryText: String {
+        switch selectedPlan {
+        case .yearly:
+            return "Continue"
+        case .weekly:
+            if trialEnabled {
+                return "Try 3 Days for Free"
+            } else {
+                return "Subscribe Weekly"
+            }
+        case .free:
+            return "Continue"
+        }
+    }
+    
+    private var buttonSecondaryText: String? {
+        switch selectedPlan {
+        case .weekly where trialEnabled:
+            return "then $7.99/week"
+        case .weekly where !trialEnabled:
+            return "$7.99/week"
+        default:
+            return nil
+        }
+    }
+    
+    private var shouldShowTwoLines: Bool {
+        return buttonSecondaryText != nil
+    }
+    
     // Enhanced crystal animation properties
     @State private var sparklePosition: CGPoint = CGPoint(x: 0.2, y: 0.2)
     @State private var animationPhase: Double = 0
@@ -364,7 +395,7 @@ struct PaywallView: View {
             ZStack {
                 RoundedRectangle(cornerRadius: StyleGuide.CornerRadius.medium)
                     .fill(StyleGuide.Colors.roseQuartzPink)
-                    .frame(height: 80)
+                    .frame(height: 90)
                     .mineralShadow(StyleGuide.Colors.roseQuartzPink, intensity: .large)
                 
                 if isLoading {
@@ -372,9 +403,23 @@ struct PaywallView: View {
                         .progressViewStyle(CircularProgressViewStyle(tint: .white))
                         .scaleEffect(1.2)
                 } else {
-                    Text(selectedPlan == .yearly ? "Continue" : "Start Free Trial")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                    if shouldShowTwoLines {
+                        VStack(spacing: 4) {
+                            Text(buttonPrimaryText)
+                                .font(.system(size: 19, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            
+                            if let secondaryText = buttonSecondaryText {
+                                Text(secondaryText)
+                                    .font(.system(size: 15, weight: .medium, design: .rounded))
+                                    .foregroundColor(.white.opacity(0.9))
+                            }
+                        }
+                    } else {
+                        Text(buttonPrimaryText)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
                 }
             }
         }
@@ -649,17 +694,17 @@ struct PaywallView: View {
                                 Text(originalPrice)
                                     .strikethrough()
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
+                                    .foregroundColor(.secondary)
                             }
                             
                             if isTrial && showTrial {
                                 Text("then \(plan.price)")
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
+                                    .foregroundColor(.secondary)
                             } else {
                                 Text(plan.price)
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(StyleGuide.Colors.roseQuartzPink) // .foregroundColor(.secondary)
+                                    .foregroundColor(.secondary)
                             }
                         }
                     }
