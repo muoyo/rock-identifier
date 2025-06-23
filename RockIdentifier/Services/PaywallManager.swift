@@ -52,6 +52,12 @@ class PaywallManager {
     /// Returns true if paywall was shown
     @discardableResult
     func showHardPaywallIfNeeded() -> Bool {
+        
+        // HARD PAYWALLS DISABLED - always return false
+        print("PaywallManager: Hard paywalls disabled - NOT showing hard paywall")
+        return false
+        
+               
         // First check if user has an active subscription - never show paywall to subscribed users
         if hasActiveSubscription() {
             print("PaywallManager: User has active subscription - NOT showing hard paywall")
