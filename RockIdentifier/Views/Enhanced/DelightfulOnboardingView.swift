@@ -71,25 +71,6 @@ struct DelightfulOnboardingView: View {
                     .padding(.leading)
                     
                     Spacer()
-                    
-                    // Skip button with subtle animation
-                    Button {
-                        HapticManager.shared.lightImpact()
-                        completeOnboarding()
-                    } label: {
-                        Text("Skip")
-                            .fontWeight(.medium)
-                            .foregroundColor(.white.opacity(0.8))
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(
-                                Capsule()
-                                    .fill(Color.white.opacity(0.2))
-                            )
-                            .scaleEffect(1.0)
-                    }
-                    .buttonStyle(EnhancedScaleButtonStyle(scaleAmount: 0.95))
-                    .padding(.trailing)
                 }
                 .padding(.top, 20)
                 
@@ -197,11 +178,8 @@ struct DelightfulOnboardingView: View {
                 }
             }
         }
-
+        .modifier(InteractiveDismissModifier(isEnabled: true)) // Disable swipe-to-dismiss - users must complete the journey!
     }
-    
-
-    
     // MARK: - Sparkle Effects
     private func createSparkleEffect() {
         sparkleLocations = []
@@ -517,5 +495,3 @@ struct ParticleData: Identifiable {
         self.duration = Double.random(in: 3...8)
     }
 }
-
-
