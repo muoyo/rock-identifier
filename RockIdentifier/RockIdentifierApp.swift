@@ -5,12 +5,14 @@
 import SwiftUI
 import RevenueCat
 import AVFoundation
+import StoreKit
 
 @main
 struct RockIdentifierApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding = false
     @State private var showSplash = true
+    @State private var showOnboardingReviewPrompt = false
     
     // Initialize the subscription manager as a StateObject so it persists across the app
     @StateObject private var subscriptionManager = SubscriptionManager()
@@ -27,6 +29,21 @@ struct RockIdentifierApp: App {
         
         // Note: Entitlement mapping should be configured in the RevenueCat dashboard
         // rather than in code, as the API has likely changed in the current SDK version
+    }
+    
+    // MARK: - Helper Functions
+    
+    /// Check and show paywall after onboarding/review prompt
+    private func checkAndShowPaywall() {
+        print("RockIdentifierApp: Checking for paywall after onboarding")
+        let showedHardPaywall = PaywallManager.shared.showHardPaywallIfNeeded()
+        PaywallManager.shared.logState()
+        
+        // If hard paywall wasn't shown, always show soft paywall after onboarding
+        if !showedHardPaywall {
+            print("RockIdentifierApp: No hard paywall shown, showing soft paywall after onboarding")
+            PaywallManager.shared.showSoftPaywall()
+        }
     }
     
     var body: some Scene {
@@ -81,15 +98,17 @@ struct RockIdentifierApp: App {
             }
             .sheet(isPresented: $showOnboarding, onDismiss: {
                 hasCompletedOnboarding = true
-                // Check if we should show paywall after onboarding
-                print("RockIdentifierApp: Onboarding dismissed, checking for hard paywall")
-                let showedHardPaywall = PaywallManager.shared.showHardPaywallIfNeeded()
-                PaywallManager.shared.logState()
                 
-                // If hard paywall wasn't shown, always show soft paywall after onboarding
-                if !showedHardPaywall {
-                    print("RockIdentifierApp: No hard paywall shown, showing soft paywall after onboarding")
-                    PaywallManager.shared.showSoftPaywall()
+                // Show review prompt right after onboarding if appropriate
+                if ReviewPromptManager.shared.shouldShowOnboardingReviewPrompt() {
+                    print("RockIdentifierApp: Showing onboarding review prompt")
+                    // Brief delay to let onboarding fully dismiss
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        showOnboardingReviewPrompt = true
+                    }
+                } else {
+                    // If no review prompt, go straight to paywall check
+                    checkAndShowPaywall()
                 }
             }) {
                 DelightfulOnboardingView(isPresented: $showOnboarding)
@@ -104,6 +123,20 @@ struct RockIdentifierApp: App {
                 PaywallView(isDismissable: false)
                     .environmentObject(subscriptionManager)
             }
+            // Onboarding review prompt
+            .overlay(
+                Group {
+                    if showOnboardingReviewPrompt {
+                        OnboardingReviewPromptView(isVisible: $showOnboardingReviewPrompt)
+                            .onDisappear {
+                                // After review prompt dismisses, show paywall
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    checkAndShowPaywall()
+                                }
+                            }
+                    }
+                }
+            )
         }
     }
     
