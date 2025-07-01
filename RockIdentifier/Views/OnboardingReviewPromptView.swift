@@ -15,6 +15,9 @@ struct OnboardingReviewPromptView: View {
     @State private var sparkleRotation: Double = 0
     @State private var backgroundOpacity: Double = 0
     
+    // State for celebration modal
+    @State private var showCelebration: Bool = false
+    
     var body: some View {
         ZStack {
             // Backdrop with subtle blur
@@ -33,7 +36,7 @@ struct OnboardingReviewPromptView: View {
                         .font(.system(size: 44, weight: .bold))
                         .foregroundColor(StyleGuide.Colors.roseQuartzPink)
                         .rotationEffect(.degrees(sparkleRotation))
-                        .shadow(color: StyleGuide.Colors.roseQuartzPink.opacity(0.4), radius: 8)
+                        .shadow(color: StyleGuide.Colors.amethystPurple.opacity(0.4), radius: 8)
                     
                     Text("Loving what you see so far?")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
@@ -109,6 +112,17 @@ struct OnboardingReviewPromptView: View {
             .padding(.horizontal, 40)
             .scaleEffect(cardScale)
             .opacity(cardOpacity)
+            
+            // Celebration modal overlay
+            if showCelebration {
+                ThankYouCelebrationView(isVisible: $showCelebration)
+                    .onDisappear {
+                        // When celebration dismisses, dismiss the review prompt
+                        dismiss()
+                    }
+                    .transition(.opacity)
+                    .zIndex(1)
+            }
         }
         .onAppear {
             showPrompt()
@@ -148,8 +162,8 @@ struct OnboardingReviewPromptView: View {
         // Mark that we've shown the onboarding review prompt
         UserDefaults.standard.set(true, forKey: "has_shown_onboarding_review_prompt")
         
-        // Dismiss the prompt
-        dismiss()
+        // Show celebration modal instead of immediately dismissing
+        showCelebration = true
     }
     
     private func dismissWithoutReview() {

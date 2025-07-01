@@ -20,6 +20,8 @@ struct RockIdentifierApp: App {
     // Observe AppState for paywall presentation
     @ObservedObject private var appState = AppState.shared
     
+
+    
     init() {
         // Configure audio session to allow mixing with other audio
         configureAudioSession()
@@ -129,7 +131,9 @@ struct RockIdentifierApp: App {
                     if showOnboardingReviewPrompt {
                         OnboardingReviewPromptView(isVisible: $showOnboardingReviewPrompt)
                             .onDisappear {
-                                // After review prompt dismisses, show paywall
+                                // Always show paywall after review prompt dismisses
+                                // Apple handles the rating dialog invisibly - we don't need to wait for it
+                                print("RockIdentifierApp: Review prompt dismissed, showing paywall")
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                     checkAndShowPaywall()
                                 }
@@ -137,6 +141,7 @@ struct RockIdentifierApp: App {
                     }
                 }
             )
+
         }
     }
     

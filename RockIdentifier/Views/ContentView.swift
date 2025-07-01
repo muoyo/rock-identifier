@@ -34,6 +34,16 @@ struct ContentView: View {
     // Settings sheet
     @State private var showSettings: Bool = false
     
+    // Camera permission modal state
+    @State private var showCameraPermissionModal: Bool = false
+    @State private var cameraPermissionGranted: Bool = false
+    
+    // Track onboarding completion
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
+    
+    // Observe app state for paywall changes
+    @ObservedObject private var appState = AppState.shared
+    
     // Initialize notification observer for developer mode toggle
     init() {
         NotificationCenter.default.addObserver(
@@ -49,7 +59,10 @@ struct ContentView: View {
         ZStack(alignment: .top) {
             // Camera view
             CameraView(
-                isActive: $cameraIsActive,
+                isActive: Binding(
+                    get: { cameraIsActive && cameraPermissionGranted },
+                    set: { cameraIsActive = $0 }
+                ),
                 onCaptureImage: { image in
                     withAnimation {
                         if subscriptionManager.status.isActive || subscriptionManager.remainingIdentifications > 0 {
@@ -136,6 +149,45 @@ struct ContentView: View {
             showDeveloperSettings = true
             HapticManager.shared.successFeedback()
         }
+        // Camera permission modal overlay
+        .overlay(
+            Group {
+                if showCameraPermissionModal {
+                    CameraPermissionModalView(
+                        isPresented: $showCameraPermissionModal,
+                        onPermissionGranted: {
+                            cameraPermissionGranted = true
+                            // Small delay to let modal dismiss animation complete
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                // Camera will now initialize properly
+                                print("Camera permission granted, camera will become active")
+                            }
+                        }
+                    )
+                    .transition(.opacity)
+                }
+            }
+        )
+        // Check camera permission when paywall states change
+        .onChange(of: appState.showHardPaywall) { _ in
+            // When hard paywall is dismissed, check camera permission
+            if !appState.showHardPaywall {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    print("Hard paywall dismissed - checking camera permission")
+                    checkInitialCameraPermission()
+                }
+            }
+        }
+        .onChange(of: appState.showSoftPaywall) { showingSoftPaywall in
+            print("RockIdentifierApp: Soft paywall state changed to: \(showingSoftPaywall)")
+            // When soft paywall is dismissed, check camera permission
+            if !showingSoftPaywall {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    print("Soft paywall dismissed - checking camera permission")
+                    checkInitialCameraPermission()
+                }
+            }
+        }
     }
     
     // Handle state changes - Back to original simple flow
@@ -214,6 +266,48 @@ struct ContentView: View {
         identificationService.state = .idle
         withAnimation {
             cameraIsActive = true
+        }
+    }
+    
+    // MARK: - Camera Permission Management
+    
+    /// Check camera permission status and show modal if needed
+    private func checkInitialCameraPermission() {
+        let currentStatus = AVCaptureDevice.authorizationStatus(for: .video)
+        
+        print("ContentView: checkInitialCameraPermission called - currentStatus: \(currentStatus)")
+        print("ContentView: hasCompletedOnboarding: \(hasCompletedOnboarding)")
+        print("ContentView: appState.showHardPaywall: \(appState.showHardPaywall)")
+        print("ContentView: appState.showSoftPaywall: \(appState.showSoftPaywall)")
+        
+        switch currentStatus {
+        case .authorized:
+            cameraPermissionGranted = true
+            showCameraPermissionModal = false
+            print("Camera permission already granted")
+            
+        case .notDetermined, .denied, .restricted:
+            // Only show modal if:
+            // 1. Onboarding is complete AND
+            // 2. No paywalls are currently showing
+            if hasCompletedOnboarding && !appState.showHardPaywall && !appState.showSoftPaywall {
+                cameraPermissionGranted = false
+                showCameraPermissionModal = true
+                print("ContentView: SHOWING camera permission modal (paywall flow complete)")
+            } else {
+                // Don't show modal yet - onboarding not complete or paywall is active
+                cameraPermissionGranted = false
+                showCameraPermissionModal = false
+                if !hasCompletedOnboarding {
+                    print("Onboarding not complete - deferring camera permission")
+                } else {
+                    print("ContentView: Paywall active - deferring camera permission modal")
+                }
+            }
+            
+        @unknown default:
+            cameraPermissionGranted = false
+            showCameraPermissionModal = hasCompletedOnboarding && !appState.showHardPaywall && !appState.showSoftPaywall
         }
     }
 }

@@ -67,8 +67,8 @@ struct CameraView: View {
                     CameraPreviewView(captureSession: captureSession, photoOutput: photoOutput, photoCaptureDelegate: photoCaptureDelegate)
                     .frame(width: screen?.size.width, height: screen?.size.height, alignment: .center)
                     .onAppear {
-                        print("==> CameraPreviewView appeared, checking camera permission")
-                        checkCameraPermission()
+                    print("==> CameraPreviewView appeared, checking if camera permission is granted")
+                    checkCameraPermission()
                     }
                 }
             }
@@ -435,21 +435,19 @@ struct CameraView: View {
     
     private func startCameraSession() {
         print("==> startCameraSession")
-        if let _ = captureSession {} else {
-            captureSession = AVCaptureSession()
-        }
-        if let _ = photoOutput {} else {
-            photoOutput = AVCapturePhotoOutput()
-        }
-        
-        // Re-setup the camera if needed
-        setupCamera()
-        
-        if let captureSession = captureSession, !captureSession.isRunning {
-            DispatchQueue.global(qos: .userInitiated).async {
-                print("==> captureSession.startRunning()")
-                captureSession.startRunning()
+        DispatchQueue.main.async {
+            // Initialize session and output if needed
+            if self.captureSession == nil {
+                self.captureSession = AVCaptureSession()
             }
+            if self.photoOutput == nil {
+                self.photoOutput = AVCapturePhotoOutput()
+            }
+            
+            // Re-setup the camera if needed
+            // setupCamera() already handles starting the session, so no duplicate startRunning() calls
+            self.setupCamera()
+            print("==> Camera session setup complete")
         }
     }
     
@@ -684,28 +682,17 @@ struct CameraView: View {
     func checkCameraPermission() {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
-            // Already authorized
+            // Already authorized - set up camera
             DispatchQueue.main.async {
                 self.setupCamera()
             }
-        case .notDetermined:
-            // Request permission
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                if granted {
-                    DispatchQueue.main.async {
-                        self.setupCamera()
-                    }
-                } else {
-                    print("Camera permission denied")
-                    // Could show an alert here to inform the user
-                }
-            }
-        case .denied, .restricted:
-            // Permission denied or restricted, handle accordingly
-            print("Camera access denied or restricted")
-            // Could show an alert here to guide user to settings
+        case .notDetermined, .denied, .restricted:
+            // Do NOT request permission here - let ContentView handle it
+            print("Camera permission not granted - waiting for ContentView permission flow")
+            // Don't set up camera
             break
         @unknown default:
+            print("Unknown camera permission status")
             break
         }
     }

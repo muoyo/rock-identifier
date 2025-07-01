@@ -51,11 +51,11 @@ struct CameraPermissionModalView: View {
                         VStack(spacing: 6) {
                             Text("Camera Access Required")
                                 .font(.system(size: 20, weight: .bold))
-                                .foregroundColor(.primary)
+                                .foregroundColor(.black) // Static color for light modal background
                             
                             Text("Enable camera access to start identifying rocks")
                                 .font(.system(size: 15, weight: .regular))
-                                .foregroundColor(.secondary)
+                                .foregroundColor(.gray) // Static color for light modal background
                                 .multilineTextAlignment(.center)
                         }
                     }
@@ -107,11 +107,11 @@ struct CameraPermissionModalView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "lock.shield")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.gray)
                         
                         Text("Photos are processed securely and not stored")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(.gray)
                     }
                     
                     // Remove "Maybe Later" button since permission is required
@@ -237,43 +237,5 @@ struct ModalButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
             .opacity(configuration.isPressed ? 0.9 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
-#Preview {
-    ZStack {
-        // Mock camera background
-        Color.black
-            .ignoresSafeArea()
-        
-        // Mock camera interface elements
-        VStack {
-            Spacer()
-            
-            HStack {
-                Circle()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 70, height: 70)
-                
-                Spacer()
-                
-                Circle()
-                    .fill(Color.blue)
-                    .frame(width: 80, height: 80)
-                
-                Spacer()
-                
-                Circle()
-                    .fill(Color.white.opacity(0.3))
-                    .frame(width: 70, height: 70)
-            }
-            .padding(.horizontal, 30)
-            .padding(.bottom, 40)
-        }
-        
-        // Modal overlay
-        CameraPermissionModalView(isPresented: .constant(true)) {
-            print("Permission granted")
-        }
     }
 }
