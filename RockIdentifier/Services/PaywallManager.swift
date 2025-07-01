@@ -117,13 +117,15 @@ class PaywallManager {
     
     /// Check if user has an active subscription
     private func hasActiveSubscription() -> Bool {
-        // First check if developer mode is active with the shared SubscriptionManager
-        if let subscriptionManager = SubscriptionManager.shared, subscriptionManager.developerMode {
-            // In developer mode, trust the local status
+        // Always use the local SubscriptionManager status as the source of truth
+        // This ensures we're using the most up-to-date status after purchases
+        if let subscriptionManager = SubscriptionManager.shared {
+            print("PaywallManager: Checking subscription status - isActive: \(subscriptionManager.status.isActive), developerMode: \(subscriptionManager.developerMode)")
             return subscriptionManager.status.isActive
         }
         
-        // Otherwise check with RevenueCat
+        // Fallback to RevenueCat if SubscriptionManager isn't available (shouldn't happen)
+        print("PaywallManager: WARNING - SubscriptionManager.shared is nil, falling back to RevenueCat")
         let customerInfo = Purchases.shared.cachedCustomerInfo
         return customerInfo?.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess) ?? false
     }

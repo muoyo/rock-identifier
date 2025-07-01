@@ -7,6 +7,8 @@ import SwiftUI
 struct SettingsView: View {
     @Binding var isPresented: Bool
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @State private var showRestoreAlert = false
+    @State private var restoreAlertMessage = ""
     
     var body: some View {
         NavigationView {
@@ -29,8 +31,11 @@ struct SettingsView: View {
                         }
                         
                         Button("Upgrade to Premium") {
-                            // Show paywall
-                            PaywallManager.shared.showSoftPaywall()
+                            // Dismiss settings first, then show paywall
+                            isPresented = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                PaywallManager.shared.showSoftPaywall()
+                            }
                         }
                         .foregroundColor(.blue)
                     }
@@ -44,6 +49,29 @@ struct SettingsView: View {
                         }
                         .foregroundColor(.blue)
                     }
+                    
+                    // Always show restore button for both free and premium users
+                    Button("Restore Purchases") {
+                        // Restore purchases
+                        subscriptionManager.restorePurchases { success, error in
+                            DispatchQueue.main.async {
+                                if success && subscriptionManager.status.isActive {
+                                    // Successfully restored
+                                    print("Settings: Successfully restored subscription")
+                                    restoreAlertMessage = "Your subscription has been successfully restored!"
+                                    showRestoreAlert = true
+                                } else if let error = error {
+                                    print("Settings: Restore error: \(error.localizedDescription)")
+                                    restoreAlertMessage = "Restore failed: \(error.localizedDescription)"
+                                    showRestoreAlert = true
+                                } else if success && !subscriptionManager.status.isActive {
+                                    restoreAlertMessage = "No active subscriptions found. If you previously purchased a subscription, make sure you're signed in with the correct Apple ID."
+                                    showRestoreAlert = true
+                                }
+                            }
+                        }
+                    }
+                    .foregroundColor(.blue)
                 }
                 
                 Section(header: Text("App")) {
@@ -126,6 +154,13 @@ struct SettingsView: View {
             .navigationBarItems(trailing: Button("Done") {
                 isPresented = false
             })
+            .alert(isPresented: $showRestoreAlert) {
+                Alert(
+                    title: Text("Restore Purchases"),
+                    message: Text(restoreAlertMessage),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
         }
     }
 }

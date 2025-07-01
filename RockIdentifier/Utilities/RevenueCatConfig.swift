@@ -7,20 +7,22 @@ import RevenueCat
 
 struct RevenueCatConfig {
     // API keys
-    #if DEBUG
-    static let apiKey = "appl_vlfrSylKwVKeuFWbeAiQwHNeVua" // Debug API key
-    #else
     static let apiKey = "appl_vlfrSylKwVKeuFWbeAiQwHNeVua" // Production API key (use correct one for production)
-    #endif
     
     // String constants (to avoid duplicating strings throughout the app)
+    // SINGLE SOURCE OF TRUTH: All product IDs are defined here and referenced elsewhere
     struct Identifiers {
-        // Product identifiers
-        static let weeklySubscription = "com.appmagic.rockidentifier.weekly_2"
-        static let yearlySubscription = "com.appmagic.rockidentifier.yearly_2"
+        // Product identifiers - These MUST match exactly with App Store Connect
+        static let weeklySubscription = "com.appmagic.rockidentifier.weekly__"
+        static let yearlySubscription = "com.appmagic.rockidentifier.yearly__"
         
-        // Entitlement identifiers
+        // Entitlement identifiers - These MUST match RevenueCat dashboard configuration
         static let premiumAccess = "premium_access"
+        
+        // Convenience method to get all product IDs
+        static var allProductIDs: [String] {
+            return [weeklySubscription, yearlySubscription]
+        }
     }
     
     // Configure RevenueCat with application settings

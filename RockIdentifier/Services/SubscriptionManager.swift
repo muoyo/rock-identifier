@@ -100,14 +100,21 @@ class SubscriptionManager: NSObject, ObservableObject {
     }
     
     private func updateSubscriptionStatus(with customerInfo: CustomerInfo?) {
-        guard let customerInfo = customerInfo else { return }
+        guard let customerInfo = customerInfo else { 
+            print("SubscriptionManager: updateSubscriptionStatus called with nil customerInfo")
+            return 
+        }
+        
+        print("SubscriptionManager: Updating subscription status from RevenueCat...")
         
         // Store customer ID for restoration
         let appUserID = Purchases.shared.appUserID
         defaults.set(appUserID, forKey: customerIDKey)
+        print("SubscriptionManager: Stored customer ID: \(appUserID)")
         
         // Check if user has active entitlement
         let hasActiveEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess)
+        print("SubscriptionManager: Has active entitlement: \(hasActiveEntitlement)")
         
         // Determine which product they purchased
         var plan: SubscriptionPlan = .free
@@ -118,6 +125,8 @@ class SubscriptionManager: NSObject, ObservableObject {
         if hasActiveEntitlement {
             // Get the active subscription
             if let info = customerInfo.entitlements.active[RevenueCatConfig.Identifiers.premiumAccess] {
+                print("SubscriptionManager: Found active entitlement with product ID: \(info.productIdentifier)")
+                
                 // Check which product they purchased
                 if info.productIdentifier == RevenueCatConfig.Identifiers.weeklySubscription {
                     plan = .weekly
@@ -127,12 +136,14 @@ class SubscriptionManager: NSObject, ObservableObject {
                 
                 // Get expiration date
                 expirationDate = info.expirationDate
+                print("SubscriptionManager: Plan: \(plan), Expiration: \(expirationDate?.description ?? "none")")
                 
                 // Check if in trial period
                 if info.periodType == .trial {
                     isInTrial = true
                     // Trial end date (for RevenueCat, this would be the expiration date during trial)
                     trialEndDate = info.expirationDate
+                    print("SubscriptionManager: User is in trial period, ends: \(trialEndDate?.description ?? "unknown")")
                 }
             }
         }
@@ -141,6 +152,7 @@ class SubscriptionManager: NSObject, ObservableObject {
         DispatchQueue.main.async {
             // Check if status is changing from inactive to active
             let wasActive = self.status.isActive
+            print("SubscriptionManager: Previous status - isActive: \(wasActive), plan: \(self.status.plan)")
             
             self.status = SubscriptionStatus(
                 plan: plan,
@@ -151,14 +163,17 @@ class SubscriptionManager: NSObject, ObservableObject {
             
             // Check if subscription status changed
             let isNowActive = self.status.isActive
+            print("SubscriptionManager: New status - isActive: \(isNowActive), plan: \(self.status.plan)")
             
             // If subscription became active, post notification
             if !wasActive && isNowActive {
+                print("SubscriptionManager: Subscription activated! Posting notification.")
                 NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
             }
             
             // Save the updated status
             self.saveStatus()
+            print("SubscriptionManager: Status saved to UserDefaults")
         }
     }
     
@@ -403,6 +418,42 @@ class SubscriptionManager: NSObject, ObservableObject {
         // Post notification about subscription status change when developer mode changes
         // This will trigger the PaywallManager to update its state
         NotificationCenter.default.post(name: NSNotification.Name("SubscriptionStatusChanged"), object: nil)
+    }
+    
+    /// Debug method to log current subscription state
+    func debugSubscriptionState() {
+        print("\n=== SUBSCRIPTION DEBUG INFO ===")
+        print("Local Status:")
+        print("  - isActive: \(status.isActive)")
+        print("  - plan: \(status.plan)")
+        print("  - expirationDate: \(status.expirationDate?.description ?? "none")")
+        print("  - isInTrial: \(status.isInTrial)")
+        print("  - developerMode: \(developerMode)")
+        print("  - remainingIdentifications: \(remainingIdentifications)")
+        
+        print("\nRevenueCat Info:")
+        let customerInfo = Purchases.shared.cachedCustomerInfo
+        if let customerInfo = customerInfo {
+            let hasEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess)
+            print("  - hasActiveEntitlement: \(hasEntitlement)")
+            print("  - appUserID: \(Purchases.shared.appUserID)")
+            if let entitlement = customerInfo.entitlements.active[RevenueCatConfig.Identifiers.premiumAccess] {
+                print("  - productIdentifier: \(entitlement.productIdentifier)")
+                print("  - expirationDate: \(entitlement.expirationDate?.description ?? "none")")
+                print("  - periodType: \(entitlement.periodType)")
+            }
+        } else {
+            print("  - No cached customer info")
+        }
+        
+        print("\nPaywallManager Check:")
+        let paywallCheck = PaywallManager.shared
+        print("  - Current PaywallManager believes user is subscribed: \(Purchases.shared.cachedCustomerInfo?.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess) ?? false)")
+        
+        print("\nAppState:")
+        print("  - showHardPaywall: \(AppState.shared.showHardPaywall)")
+        print("  - showSoftPaywall: \(AppState.shared.showSoftPaywall)")
+        print("================================\n")
     }
 }
 

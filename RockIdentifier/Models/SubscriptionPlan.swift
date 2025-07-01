@@ -21,13 +21,14 @@ enum SubscriptionPlan: String, Codable {
     }
     
     var productIdentifier: String {
+        // Single source of truth: All product IDs defined in RevenueCatConfig.Identifiers
         switch self {
         case .free:
             return ""
         case .weekly:
-            return "com.appmagic.rockidentifier.weekly__"
+            return RevenueCatConfig.Identifiers.weeklySubscription
         case .yearly:
-            return "com.appmagic.rockidentifier.yearly__"
+            return RevenueCatConfig.Identifiers.yearlySubscription
         }
     }
     

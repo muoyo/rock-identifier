@@ -129,6 +129,19 @@ struct DeveloperSettingsView: View {
                 
                 Section(header: Text("Subscription Testing")) {
                     Button(action: {
+                        subscriptionManager.debugSubscriptionState()
+                        lastAction = "Subscription debug info logged to console (check Xcode console)"
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Debug Subscription State")
+                            Spacer()
+                            Image(systemName: "ant.circle")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    
+                    Button(action: {
                         subscriptionManager.resetToFree()
                         lastAction = "Reset to Free tier"
                         showActionConfirmation = true
