@@ -105,7 +105,7 @@ struct RockIdentifierApp: App {
                 if ReviewPromptManager.shared.shouldShowOnboardingReviewPrompt() {
                     print("RockIdentifierApp: Showing onboarding review prompt")
                     // Brief delay to let onboarding fully dismiss
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         showOnboardingReviewPrompt = true
                     }
                 } else {
