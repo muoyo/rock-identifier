@@ -44,6 +44,36 @@ struct CameraView: View {
     // Environment access
     @Environment(\.colorScheme) var colorScheme
     
+    // Computed adaptive viewfinder dimensions
+    private var adaptiveViewfinderDimensions: (width: CGFloat, height: CGFloat) {
+        guard let screen = screen else { return (350, 350) }
+        
+        let screenWidth = screen.size.width
+        let screenHeight = screen.size.height
+        let topSafeArea = UIApplication.shared.windows.first?.safeAreaInsets.top ?? 0
+        let bottomSafeArea = UIApplication.shared.windows.first?.safeAreaInsets.bottom ?? 0
+        
+        // Estimate space taken by UI elements
+        let topControlsHeight: CGFloat = 80
+        let bottomControlsHeight: CGFloat = 120
+        let guidanceHeight: CGFloat = 60
+        let aestheticPadding: CGFloat = 60
+        
+        // Calculate available height
+        let availableHeight = screenHeight - topSafeArea - bottomSafeArea - topControlsHeight - bottomControlsHeight - guidanceHeight - aestheticPadding
+        let viewfinderHeight = max(250, availableHeight * 0.95) // Use ~90% of available space, minimum 250pt
+        
+        // Calculate available width with padding
+        let horizontalPadding: CGFloat = 40
+        let availableWidth = screenWidth - horizontalPadding
+        
+        // For rocks, use square aspect ratio - take the smaller dimension
+        let maxSize = min(availableWidth, viewfinderHeight)
+        let finalSize = min(maxSize, 420) // Cap at 420pt
+        
+        return (width: finalSize, height: finalSize)
+    }
+    
     // Toggle flashlight
     func toggleFlashlight() {
         guard let device = AVCaptureDevice.default(for: .video), device.hasTorch else { return }
@@ -76,19 +106,24 @@ struct CameraView: View {
             
             // Enhanced grid overlay for better rock positioning
             if showGrid && !shutterFlash {
-                ZStack {
-                    // Shadow backdrop for visibility in various lighting conditions
-                    RockPositioningGrid()
-                        .stroke(Color.black.opacity(0.3), lineWidth: 3)
-                        .frame(width: 260, height: 260)
-                    
-                    // Main grid with animation
-                    RockPositioningGrid()
-                        .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
-                        .frame(width: 250, height: 250)
-                        .animation(Animation.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: showGrid)
+                GeometryReader { geometry in
+                    ZStack {
+                        // Shadow backdrop for visibility in various lighting conditions
+                        RockPositioningGrid()
+                            .stroke(Color.black.opacity(0.3), lineWidth: 3)
+                            .frame(width: adaptiveViewfinderDimensions.width + 10, height: adaptiveViewfinderDimensions.height + 10)
+                        
+                        // Main grid with animation
+                        RockPositioningGrid()
+                            .stroke(Color.white.opacity(0.7), lineWidth: 1.5)
+                            .frame(width: adaptiveViewfinderDimensions.width, height: adaptiveViewfinderDimensions.height)
+                            .animation(Animation.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: showGrid)
+                    }
+                    .position(
+                        x: geometry.size.width / 2,
+                        y: geometry.size.height / 2.4  // Moved down slightly to avoid guidance text overlap
+                    )
                 }
-                .position(x: (screen?.size.width ?? 0) / 2, y: (screen?.size.height ?? 0) / 2.2)
             }
             
             // Only show camera controls when not capturing
@@ -184,9 +219,18 @@ struct CameraView: View {
                         HStack(spacing: 12) {
                             // Positioning tip
                             HStack(spacing: 4) {
-                                Image(systemName: "arrow.up.left.and.arrow.down.right")
+                                Image(systemName: "viewfinder")
                                     .font(.system(size: 10))
                                 Text("Center")
+                                    .font(.system(size: 10))
+                            }
+                            .foregroundColor(.white.opacity(0.9))
+                            
+                            // Clarity tip
+                            HStack(spacing: 4) {
+                                Image(systemName: "eye")
+                                    .font(.system(size: 10))
+                                Text("Clear")
                                     .font(.system(size: 10))
                             }
                             .foregroundColor(.white.opacity(0.9))
@@ -195,16 +239,7 @@ struct CameraView: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "light.max")
                                     .font(.system(size: 10))
-                                Text("Good Light")
-                                    .font(.system(size: 10))
-                            }
-                            .foregroundColor(.white.opacity(0.9))
-                            
-                            // Distance tip
-                            HStack(spacing: 4) {
-                                Image(systemName: "ruler")
-                                    .font(.system(size: 10))
-                                Text("4-8 inches")
+                                Text("Well-lit")
                                     .font(.system(size: 10))
                             }
                             .foregroundColor(.white.opacity(0.9))
