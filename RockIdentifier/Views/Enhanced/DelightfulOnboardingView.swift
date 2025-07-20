@@ -31,10 +31,10 @@ struct DelightfulOnboardingView: View {
         ),
         DelightfulOnboardingPage(
             title: "Build Your Dream Collection",
-            subtitle: "Start now for free",
+            subtitle: "Save and organize every find",
             description: "", // Removed redundant description
             imageName: "onboarding-collection",
-            primaryAction: "Start for Free",
+            primaryAction: "Start Your Discovery",
             interactive: .collectionPreview
         )
     ]
@@ -43,7 +43,7 @@ struct DelightfulOnboardingView: View {
     let enhancedGradients = [
         [Color(hex: "667eea"), Color(hex: "764ba2")], // Purple Discovery
         [Color(hex: "f093fb"), Color(hex: "f5576c")], // Pink Knowledge  
-        [Color(hex: "4facfe"), Color(hex: "00f2fe")]  // Blue Collection
+        [Color(hex: "00f2fe"), Color(hex: "4facfe")]  // Blue Collection
     ]
     
     var body: some View {
@@ -151,20 +151,25 @@ struct DelightfulOnboardingView: View {
                     .padding(.horizontal, 30)
                     
                     // Enhanced navigation hint
-                    if currentPage < pages.count - 1 {
-                        HStack(spacing: 8) {
-                            Image(systemName: "hand.draw")
-                                .font(.caption)
-                                .opacity(0.7)
-                            
+                    HStack(spacing: 8) {
+                        Image(systemName: "hand.draw")
+                            .font(.caption)
+                            .opacity(0.7)
+                        if currentPage < pages.count - 1 {
                             Text("Swipe to continue your journey")
                                 .font(.caption)
                                 .opacity(0.7)
                         }
-                        .foregroundColor(.white)
-                        .padding(.bottom, 8)
-                        .transition(.opacity.combined(with: .slide))
+                        else {
+                            Text("Let's go!")
+                                .font(.caption)
+                                .opacity(0.7)
+                        }
                     }
+                    .foregroundColor(.white)
+                    .padding(.bottom, 8)
+                    .transition(.opacity.combined(with: .slide))
+                    
                 }
                 .padding(.bottom, 40)
             }

@@ -10,8 +10,8 @@ struct PaywallView: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
     
     // State variables - preserved exactly as before
-    @State private var trialEnabled: Bool = true
-    @State private var selectedPlan: SubscriptionPlan = .weekly
+    @State private var trialEnabled: Bool = false
+    @State private var selectedPlan: SubscriptionPlan = .yearly
     @State private var isLoading: Bool = false
     @State private var isLoadingLifetime: Bool = false
     @State private var showSuccessMessage: Bool = false
@@ -367,17 +367,7 @@ struct PaywallView: View {
     
     private var enhancedSubscriptionPlans: some View {
         VStack(spacing: 16) {
-            // Weekly trial plan (now first)
-            enhancedPlanCard(
-                plan: .weekly,
-                title: "3-Day Free Trial",
-                isTrial: true,
-                showTrial: true,
-                isRevealed: planCardsRevealed[0],
-                isPremium: false
-            )
-            
-            // Yearly plan (now second)
+            // Yearly plan (now first)
             enhancedPlanCard(
                 plan: .yearly,
                 title: "Yearly Plan",
@@ -385,6 +375,16 @@ struct PaywallView: View {
                 discount: "SAVE 90%",
                 isRevealed: planCardsRevealed[1],
                 isPremium: true
+            )
+            
+            // Weekly trial plan (now second)
+            enhancedPlanCard(
+                plan: .weekly,
+                title: "3-Day Free Trial",
+                isTrial: true,
+                showTrial: true,
+                isRevealed: planCardsRevealed[0],
+                isPremium: false
             )
         }
         .mineralPadding(.horizontal, .medium)
