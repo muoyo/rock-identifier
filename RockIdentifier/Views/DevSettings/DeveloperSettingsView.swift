@@ -14,6 +14,7 @@ struct DeveloperSettingsView: View {
     @State private var isHardPaywall = false
     @State private var showAnimationDemo = false
     @State private var showStylingComparison = false
+    @State private var showLifetimeReviewTest = false
     
     var body: some View {
         NavigationView {
@@ -142,6 +143,53 @@ struct DeveloperSettingsView: View {
                     }
                     
                     Button(action: {
+                        subscriptionManager.validateRevenueCatConfiguration { success, message in
+                            DispatchQueue.main.async {
+                                lastAction = success ? "✅ \(message)" : "❌ \(message)"
+                                showActionConfirmation = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Text("Validate RevenueCat Config")
+                            Spacer()
+                            Image(systemName: "checkmark.shield.fill")
+                                .foregroundColor(.blue)
+                        }
+                    }
+                    
+                    Button(action: {
+                        subscriptionManager.clearRevenueCatCache { success, message in
+                            DispatchQueue.main.async {
+                                lastAction = success ? "✅ \(message)" : "❌ \(message)"
+                                showActionConfirmation = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Text("Clear RevenueCat Cache")
+                            Spacer()
+                            Image(systemName: "trash.circle.fill")
+                                .foregroundColor(.red)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Cache Clearing Info")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        Text("Use 'Clear RevenueCat Cache' if purchases fail after changing product prices in App Store Connect. This forces RevenueCat to fetch fresh product data.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("⚠️ This will temporarily switch user accounts to clear cached offerings.")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                    }
+                    .padding(.vertical, 4)
+                    
+                    Button(action: {
                         subscriptionManager.resetToFree()
                         lastAction = "Reset to Free tier"
                         showActionConfirmation = true
@@ -179,6 +227,83 @@ struct DeveloperSettingsView: View {
                                 .foregroundColor(.purple)
                         }
                     }
+                    
+                    Button(action: {
+                        subscriptionManager.purchaseLifetime { success, error in
+                            DispatchQueue.main.async {
+                                if success {
+                                    lastAction = "✅ Lifetime purchase successful!"
+                                } else {
+                                    lastAction = "❌ Lifetime purchase failed: \(error?.localizedDescription ?? "Unknown error")"
+                                }
+                                showActionConfirmation = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Text("Test Lifetime Purchase")
+                            Spacer()
+                            Image(systemName: "infinity.circle.fill")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    
+                    Button(action: {
+                        lastAction = "Testing lifetime review screen directly"
+                        showActionConfirmation = true
+                        showLifetimeReviewTest = true
+                    }) {
+                        HStack {
+                            Text("Test Review Screen (Direct)")
+                            Spacer()
+                            Image(systemName: "star.bubble.fill")
+                                .foregroundColor(.yellow)
+                        }
+                    }
+                    
+                    Button(action: {
+                        subscriptionManager.setMockPremium(plan: .lifetime)
+                        lastAction = "Set to Mock Lifetime (no purchase required)"
+                        showActionConfirmation = true
+                    }) {
+                        HStack {
+                            Text("Mock Lifetime Access")
+                            Spacer()
+                            Image(systemName: "infinity")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    
+                    Button(action: {
+                        subscriptionManager.refreshReceiptIfNeeded { success in
+                            DispatchQueue.main.async {
+                                lastAction = success ? "✅ Receipt refresh completed" : "❌ Receipt refresh failed"
+                                showActionConfirmation = true
+                            }
+                        }
+                    }) {
+                        HStack {
+                            Text("Test Receipt Refresh")
+                            Spacer()
+                            Image(systemName: "arrow.clockwise.circle.fill")
+                                .foregroundColor(.purple)
+                        }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Testing FREE Lifetime Flow")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        
+                        Text("Set lifetime price to $0.99 in App Store Connect to test the FREE lifetime review flow. The app will treat prices ≤ $0.99 as 'free' in DEBUG builds.")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("ℹ️ In production, $0.00 purchases work fine - this is only a sandbox limitation.")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                    }
+                    .padding(.vertical, 4)
                 }
                 
                 Section(header: Text("First-Time Experience Testing")) {
@@ -412,6 +537,12 @@ struct DeveloperSettingsView: View {
             }
             .sheet(isPresented: $showStylingComparison) {
                 StylingComparisonView()
+            }
+            .fullScreenCover(isPresented: $showLifetimeReviewTest) {
+                LifetimeReviewViewController {
+                    print("DeveloperSettings: Review completed")
+                    showLifetimeReviewTest = false
+                }
             }
         }
     }

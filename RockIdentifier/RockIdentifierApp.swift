@@ -12,6 +12,7 @@ struct RockIdentifierApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding = false
     @State private var showSplash = true
+    @State private var showHardReviewScreen = false
     
     // Initialize the subscription manager as a StateObject so it persists across the app
     @StateObject private var subscriptionManager = SubscriptionManager()
@@ -47,8 +48,29 @@ struct RockIdentifierApp: App {
         }
     }
     
-    /// Request native iOS rating prompt
+    /// Request native iOS rating prompt or show hard review screen for free lifetime users
     private func requestNativeRating() {
+        // Check if user just made a free lifetime purchase
+        if appState.justMadeFreeLifetimePurchase {
+            print("🎆 RockIdentifierApp: User made free lifetime purchase - showing hard review screen")
+            appState.justMadeFreeLifetimePurchase = false // Reset the flag
+            
+            // Brief delay to ensure paywall is fully dismissed
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                self.showHardReviewScreen = true
+                print("🚀 RockIdentifierApp: Hard review screen presented")
+            }
+            return
+        }
+        
+        // Skip native rating if user just completed hard review
+        if appState.justCompletedHardReview {
+            print("🚫 RockIdentifierApp: Skipping native rating - user just completed hard review")
+            // Reset the flag for future use
+            appState.justCompletedHardReview = false
+            return
+        }
+        
         print("RockIdentifierApp: Requesting native iOS rating")
         
         // Brief delay to ensure paywall is fully dismissed
@@ -123,6 +145,18 @@ struct RockIdentifierApp: App {
                 }
             }) {
                 DelightfulOnboardingView(isPresented: $showOnboarding)
+            }
+            // Hard review screen for free lifetime users
+            .fullScreenCover(isPresented: $showHardReviewScreen, onDismiss: {
+                // When hard review completes, set flag to skip native prompt
+                appState.justCompletedHardReview = true
+                print("🎆 RockIdentifierApp: Hard review completed - flag set to skip native prompt")
+            }) {
+                LifetimeReviewViewController {
+                    // User completed the review action
+                    print("📝 RockIdentifierApp: User completed hard review action")
+                    showHardReviewScreen = false
+                }
             }
             // Soft paywall sheet (can be dismissed)
             .sheet(isPresented: $appState.showSoftPaywall, onDismiss: {

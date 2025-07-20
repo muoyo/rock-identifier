@@ -17,6 +17,12 @@ class AppState: ObservableObject {
     @Published var showHardPaywall = false
     @Published var showSoftPaywall = false
     
+    // Track if user just completed hard review (to skip native review prompt)
+    @Published var justCompletedHardReview = false
+    
+    // Track if user just made a free lifetime purchase (to show hard review screen)
+    @Published var justMadeFreeLifetimePurchase = false
+    
     // Private init for singleton
     private init() {
         // Simple initialization
@@ -46,5 +52,10 @@ class AppState: ObservableObject {
         print("AppState: Dismissing all paywalls")
         showHardPaywall = false
         showSoftPaywall = false
+    }
+    
+    /// Reset the hard review completed flag
+    func resetHardReviewFlag() {
+        justCompletedHardReview = false
     }
 }

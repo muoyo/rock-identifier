@@ -36,6 +36,12 @@ class SubscriptionManager: NSObject, ObservableObject {
     // Identification counter for free tier usage
     let identificationCounter = IdentificationCounter()
     
+    // Receipt refresh request for handling receipt validation issues
+    private var receiptRefreshRequest: SKReceiptRefreshRequest?
+    
+    // Completion handler for receipt refresh
+    private var receiptRefreshCompletion: ((Bool) -> Void)?
+    
     // MARK: - Initialization
     
     override init() {
@@ -100,9 +106,9 @@ class SubscriptionManager: NSObject, ObservableObject {
     }
     
     private func updateSubscriptionStatus(with customerInfo: CustomerInfo?) {
-        guard let customerInfo = customerInfo else { 
+        guard let customerInfo = customerInfo else {
             print("SubscriptionManager: updateSubscriptionStatus called with nil customerInfo")
-            return 
+            return
         }
         
         print("SubscriptionManager: Updating subscription status from RevenueCat...")
@@ -341,9 +347,108 @@ class SubscriptionManager: NSObject, ObservableObject {
         }
     }
     
+    /// Attempt lifetime purchase with receipt refresh for validation errors
+    private func attemptLifetimePurchaseWithReceiptRefresh(package: Package, completion: ((Bool, Error?) -> Void)?) {
+        print("🔄 SubscriptionManager: Attempting lifetime purchase with receipt refresh...")
+        
+        refreshReceiptIfNeeded { [weak self] refreshSuccess in
+            guard let self = self else {
+                completion?(false, NSError(domain: "com.appmagic.rockidentifier", code: 1011, userInfo: [NSLocalizedDescriptionKey: "Manager deallocated"]))
+                return
+            }
+            
+            if !refreshSuccess {
+                print("⚠️ Receipt refresh failed, proceeding with retry anyway...")
+            }
+            
+            // Try the purchase again after receipt refresh
+            Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
+                DispatchQueue.main.async {
+                    if userCancelled {
+                        print("User cancelled lifetime purchase (retry)")
+                        let cancelledError = NSError(domain: "com.appmagic.rockidentifier", code: 1009, userInfo: [NSLocalizedDescriptionKey: "Purchase cancelled"])
+                        self.lastErrorMessage = nil
+                        completion?(false, cancelledError)
+                        return
+                    }
+                    
+                    if let error = error {
+                        print("❌ Lifetime purchase failed even after receipt refresh: \(error.localizedDescription)")
+                        self.lastErrorMessage = "Lifetime purchase failed: \(error.localizedDescription)"
+                        completion?(false, error)
+                        return
+                    }
+                    
+                    // Update subscription status
+                    self.updateSubscriptionStatus(with: customerInfo)
+                    
+                    // Verify purchase success
+                    let purchaseSucceeded = self.status.isActive
+                    if !purchaseSucceeded {
+                        let verificationError = NSError(domain: "com.appmagic.rockidentifier", code: 1010, userInfo: [NSLocalizedDescriptionKey: "Lifetime purchase verification failed"])
+                        self.lastErrorMessage = "Lifetime purchase verification failed. Please try restoring purchases."
+                        completion?(false, verificationError)
+                        return
+                    }
+                    
+                    // Success!
+                    print("✅ Lifetime purchase succeeded after receipt refresh!")
+                    completion?(true, nil)
+                }
+            }
+        }
+    }
+    
+    /// Gets the lifetime package for price checking
+    /// - Parameter completion: Callback with package or error
+    func getLifetimePackage(completion: @escaping (Package?, Error?) -> Void) {
+        print("SubscriptionManager: Getting lifetime package...")
+        
+        Purchases.shared.getOfferings { (offerings, error) in
+            if let error = error {
+                print("SubscriptionManager: Error getting offerings: \(error.localizedDescription)")
+                completion(nil, error)
+                return
+            }
+            
+            guard let offerings = offerings, let offering = offerings.current else {
+                print("SubscriptionManager: No offerings available")
+                let noOfferingsError = NSError(domain: "com.appmagic.rockidentifier", code: 1007, userInfo: [NSLocalizedDescriptionKey: "Lifetime option not available"])
+                completion(nil, noOfferingsError)
+                return
+            }
+            
+            print("SubscriptionManager: Available packages:")
+            for package in offering.availablePackages {
+                print("  - \(package.storeProduct.productIdentifier): \(package.localizedPriceString)")
+            }
+            
+            // Find the lifetime package
+            var lifetimePackage: Package?
+            for package in offering.availablePackages {
+                if package.storeProduct.productIdentifier == RevenueCatConfig.Identifiers.lifetimeAccess {
+                    lifetimePackage = package
+                    print("SubscriptionManager: Found lifetime package: \(package.storeProduct.productIdentifier) - \(package.localizedPriceString)")
+                    break
+                }
+            }
+            
+            if let package = lifetimePackage {
+                completion(package, nil)
+            } else {
+                print("SubscriptionManager: Lifetime package not found. Looking for: \(RevenueCatConfig.Identifiers.lifetimeAccess)")
+                let noPackageError = NSError(domain: "com.appmagic.rockidentifier", code: 1008, userInfo: [NSLocalizedDescriptionKey: "Lifetime option not available"])
+                completion(nil, noPackageError)
+            }
+        }
+    }
+    
     /// Purchases lifetime access
     /// - Parameter completion: Optional callback with success/error information
     func purchaseLifetime(completion: ((Bool, Error?) -> Void)? = nil) {
+        print("🔍 SubscriptionManager: Starting lifetime purchase debug...")
+        debugLifetimePurchaseConfiguration()
+        
         isLoading = true
         lastErrorMessage = nil
         
@@ -389,10 +494,22 @@ class SubscriptionManager: NSObject, ObservableObject {
                 return
             }
             
+            print("💰 SubscriptionManager: Attempting to purchase lifetime package: \(package.storeProduct.productIdentifier) for \(package.localizedPriceString)")
+            
             // Purchase the lifetime package
             Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
                 DispatchQueue.main.async {
                     self.isLoading = false
+                    
+                    // Enhanced logging for debugging
+                    print("💰 Purchase callback received:")
+                    print("  - User cancelled: \(userCancelled)")
+                    print("  - Error: \(error?.localizedDescription ?? "none")")
+                    print("  - Transaction: \(transaction?.productIdentifier ?? "none")")
+                    if let customerInfo = customerInfo {
+                        print("  - Customer has entitlements: \(Array(customerInfo.entitlements.active.keys))")
+                        print("  - Customer purchased products: \(customerInfo.allPurchasedProductIdentifiers.sorted())")
+                    }
                     
                     if userCancelled {
                         print("User cancelled lifetime purchase")
@@ -404,6 +521,19 @@ class SubscriptionManager: NSObject, ObservableObject {
                     
                     if let error = error {
                         print("Lifetime purchase error: \(error.localizedDescription)")
+                        
+                        // Enhanced error analysis for receipt validation issues
+                        let nsError = error as NSError
+                        print("   Error Code: \(nsError.code)")
+                        print("   Error Domain: \(nsError.domain)")
+                        
+                        // Check for receipt validation error (code 7712)
+                        if nsError.code == 7712 {
+                            print("⚠️ Receipt validation error detected - attempting receipt refresh...")
+                            self.attemptLifetimePurchaseWithReceiptRefresh(package: package, completion: completion)
+                            return
+                        }
+                        
                         self.lastErrorMessage = "Lifetime purchase failed: \(error.localizedDescription)"
                         completion?(false, error)
                         return
@@ -434,7 +564,8 @@ class SubscriptionManager: NSObject, ObservableObject {
         isLoading = true
         lastErrorMessage = nil
         
-        Purchases.shared.restorePurchases { [weak self] (customerInfo, error) in
+        // Use enhanced restore with receipt refresh
+        restorePurchasesWithRefresh { [weak self] success, error in
             guard let self = self else {
                 completion?(false, error)
                 return
@@ -449,9 +580,6 @@ class SubscriptionManager: NSObject, ObservableObject {
                     completion?(false, error)
                     return
                 }
-                
-                // Update subscription status
-                self.updateSubscriptionStatus(with: customerInfo)
                 
                 // Check if restoration resulted in an active subscription
                 let restoreSucceeded = self.status.isActive
@@ -544,6 +672,201 @@ class SubscriptionManager: NSObject, ObservableObject {
         print("  - showSoftPaywall: \(AppState.shared.showSoftPaywall)")
         print("================================\n")
     }
+    
+    /// Debug method specifically for lifetime purchase configuration
+    private func debugLifetimePurchaseConfiguration() {
+        print("\n🔍 === LIFETIME PURCHASE DEBUG ===")
+        print("Configuration Check:")
+        print("  - App Bundle ID: \(Bundle.main.bundleIdentifier ?? "Unknown")")
+        print("  - RevenueCat API Key: \(RevenueCatConfig.apiKey.prefix(20))...")
+        print("  - Lifetime Product ID: \(RevenueCatConfig.Identifiers.lifetimeAccess)")
+        print("  - Premium Entitlement ID: \(RevenueCatConfig.Identifiers.premiumAccess)")
+        print("  - RevenueCat User ID: \(Purchases.shared.appUserID)")
+        print("  - Is Anonymous: \(Purchases.shared.isAnonymous)")
+        
+        // Check offerings synchronously if cached, otherwise note it
+        let cachedCustomerInfo = Purchases.shared.cachedCustomerInfo
+        if let customerInfo = cachedCustomerInfo {
+            print("\nCached Customer Info:")
+            print("  - Has active entitlements: \(!customerInfo.entitlements.active.isEmpty)")
+            print("  - Active entitlement IDs: \(Array(customerInfo.entitlements.active.keys))")
+            print("  - All product IDs: \(customerInfo.allPurchasedProductIdentifiers.sorted())")
+        } else {
+            print("\nCached Customer Info: None available")
+        }
+        
+        print("\nEnvironment Check:")
+        #if DEBUG
+        print("  - Build Configuration: DEBUG (Sandbox)")
+        #else
+        print("  - Build Configuration: RELEASE (Production)")
+        #endif
+        
+        print("====================================\n")
+    }
+    
+    // MARK: - Receipt Refresh Methods
+    
+    /// Force refresh the App Store receipt to ensure latest transaction data
+    func refreshReceiptIfNeeded(completion: @escaping (Bool) -> Void) {
+        print("🗘️ SubscriptionManager: Refreshing receipt to ensure latest transaction data...")
+        
+        let request = SKReceiptRefreshRequest()
+        request.delegate = self
+        receiptRefreshRequest = request
+        
+        // Store completion handler for delegate callback
+        receiptRefreshCompletion = completion
+        
+        request.start()
+    }
+    
+    /// Enhanced restore purchases with receipt refresh
+    private func restorePurchasesWithRefresh(completion: @escaping (Bool, Error?) -> Void) {
+        print("🔄 SubscriptionManager: Starting restore with receipt refresh...")
+        
+        refreshReceiptIfNeeded { [weak self] success in
+            guard let self = self else {
+                completion(false, NSError(domain: "com.appmagic.rockidentifier", code: 1011, userInfo: [NSLocalizedDescriptionKey: "Manager deallocated"]))
+                return
+            }
+            
+            if !success {
+                print("⚠️ Receipt refresh failed, proceeding with restore anyway...")
+            }
+            
+            // Proceed with RevenueCat restore
+            Purchases.shared.restorePurchases { (customerInfo, error) in
+                DispatchQueue.main.async {
+                    if let error = error {
+                        print("❌ Restore after refresh failed: \(error.localizedDescription)")
+                        completion(false, error)
+                        return
+                    }
+                    
+                    // Update subscription status
+                    self.updateSubscriptionStatus(with: customerInfo)
+                    
+                    let restoreSucceeded = self.status.isActive
+                    completion(true, nil)
+                }
+            }
+        }
+    }
+    
+    /// Test method to validate RevenueCat configuration
+    func validateRevenueCatConfiguration(completion: @escaping (Bool, String) -> Void) {
+        print("🔧 SubscriptionManager: Validating RevenueCat configuration...")
+        
+        // First get offerings to check if products are properly configured
+        Purchases.shared.getOfferings { (offerings, error) in
+            if let error = error {
+                let message = "Failed to fetch offerings: \(error.localizedDescription)"
+                print("❌ \(message)")
+                completion(false, message)
+                return
+            }
+            
+            guard let offerings = offerings, let currentOffering = offerings.current else {
+                let message = "No current offering available"
+                print("❌ \(message)")
+                completion(false, message)
+                return
+            }
+            
+            print("✅ Found current offering with \(currentOffering.availablePackages.count) packages")
+            
+            // Check if lifetime product exists
+            let lifetimeProductID = RevenueCatConfig.Identifiers.lifetimeAccess
+            var foundLifetimeProduct = false
+            
+            for package in currentOffering.availablePackages {
+                let productID = package.storeProduct.productIdentifier
+                let price = package.localizedPriceString
+                print("  📱 Package: \(productID) - \(price)")
+                
+                if productID == lifetimeProductID {
+                    foundLifetimeProduct = true
+                    print("    ✅ Found lifetime product!")
+                }
+            }
+            
+            if !foundLifetimeProduct {
+                let message = "Lifetime product '\(lifetimeProductID)' not found in offerings"
+                print("❌ \(message)")
+                completion(false, message)
+                return
+            }
+            
+            // Check customer info
+            Purchases.shared.getCustomerInfo { (customerInfo, error) in
+                if let error = error {
+                    let message = "Failed to get customer info: \(error.localizedDescription)"
+                    print("❌ \(message)")
+                    completion(false, message)
+                    return
+                }
+                
+                print("✅ RevenueCat configuration appears valid!")
+                
+                if let customerInfo = customerInfo {
+                    let hasActiveEntitlement = customerInfo.entitlements.active.keys.contains(RevenueCatConfig.Identifiers.premiumAccess)
+                    print("  Current entitlement status: \(hasActiveEntitlement ? "Active" : "Inactive")")
+                }
+                
+                completion(true, "Configuration validated successfully")
+            }
+        }
+    }
+    
+    /// Clear RevenueCat's cached offerings and force fresh data
+    func clearRevenueCatCache(completion: @escaping (Bool, String) -> Void) {
+        print("🧹 SubscriptionManager: Clearing RevenueCat cache and forcing refresh...")
+        
+        // Step 1: Invalidate cached offerings by switching user temporarily
+        let originalUserID = Purchases.shared.appUserID
+        let tempUserID = "cache_clear_\(UUID().uuidString.prefix(8))"
+        
+        print("  🔄 Switching to temporary user ID to clear cache...")
+        Purchases.shared.logIn(tempUserID) { (customerInfo, created, error) in
+            if let error = error {
+                print("  ❌ Failed to switch to temp user: \(error.localizedDescription)")
+                completion(false, "Failed to clear cache: \(error.localizedDescription)")
+                return
+            }
+            
+            print("  ✅ Switched to temp user, now switching back...")
+            
+            // Step 2: Switch back to original user with fresh cache
+            Purchases.shared.logIn(originalUserID) { (customerInfo, created, error) in
+                if let error = error {
+                    print("  ❌ Failed to switch back to original user: \(error.localizedDescription)")
+                    completion(false, "Failed to restore original user: \(error.localizedDescription)")
+                    return
+                }
+                
+                print("  ✅ Restored original user, cache should be cleared")
+                
+                // Step 3: Force fetch fresh offerings
+                print("  🔄 Fetching fresh offerings...")
+                Purchases.shared.getOfferings { (offerings, error) in
+                    if let error = error {
+                        let message = "Failed to fetch fresh offerings: \(error.localizedDescription)"
+                        print("  ❌ \(message)")
+                        completion(false, message)
+                        return
+                    }
+                    
+                    print("  ✅ Fresh offerings loaded successfully!")
+                    
+                    // Update subscription status with fresh customer info
+                    self.updateSubscriptionStatus(with: customerInfo)
+                    
+                    completion(true, "Cache cleared and fresh data loaded")
+                }
+            }
+        }
+    }
 }
 
 // MARK: - RevenueCat Delegate
@@ -558,3 +881,26 @@ extension SubscriptionManager: PurchasesDelegate {
         updateSubscriptionStatus(with: purchaserInfo)
     }
 }
+
+// MARK: - SKRequestDelegate (for receipt refresh)
+extension SubscriptionManager: SKRequestDelegate {
+    func requestDidFinish(_ request: SKRequest) {
+        print("✅ Receipt refresh completed successfully")
+        DispatchQueue.main.async {
+            self.receiptRefreshCompletion?(true)
+            self.receiptRefreshCompletion = nil
+            self.receiptRefreshRequest = nil
+        }
+    }
+    
+    func request(_ request: SKRequest, didFailWithError error: Error) {
+        print("❌ Receipt refresh failed: \(error.localizedDescription)")
+        DispatchQueue.main.async {
+            self.receiptRefreshCompletion?(false)
+            self.receiptRefreshCompletion = nil
+            self.receiptRefreshRequest = nil
+        }
+    }
+}
+    
+        

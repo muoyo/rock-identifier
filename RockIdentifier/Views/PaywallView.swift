@@ -126,6 +126,15 @@ struct PaywallView: View {
             startMagicalAnimations()
             preservedOnAppearLogic()
         }
+        .onReceive(subscriptionManager.$status) { newStatus in
+            print("🔄 PaywallView: Subscription status changed to active: \(newStatus.isActive)")
+            if newStatus.isActive {
+                print("PaywallView: Status became active, dismissing paywall")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            }
+        }
         .onChange(of: selectedPlan) { newPlan in
             trialEnabled = newPlan == .weekly
         }
@@ -929,9 +938,17 @@ struct PaywallView: View {
         
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
         
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootViewController = windowScene.windows.first?.rootViewController {
-            rootViewController.present(alert, animated: true)
+        // Add delay to ensure any transitions are complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController {
+                // Find the topmost presented view controller
+                var topViewController = rootViewController
+                while let presentedVC = topViewController.presentedViewController {
+                    topViewController = presentedVC
+                }
+                topViewController.present(alert, animated: true)
+            }
         }
     }
     
@@ -939,17 +956,96 @@ struct PaywallView: View {
         HapticManager.shared.mediumImpact()
         isLoadingLifetime = true
         
-        subscriptionManager.purchaseLifetime { success, error in
+        // Get the lifetime package to check its price
+        subscriptionManager.getLifetimePackage { package, error in
+            if let error = error {
+                print("PaywallView: Error getting lifetime package: \(error.localizedDescription)")
+                
+                // Fallback: Try direct purchase without price check
+                print("PaywallView: Attempting direct lifetime purchase as fallback")
+                self.attemptDirectLifetimePurchase()
+                return
+            }
+            
+            guard let package = package else {
+                print("PaywallView: No lifetime package found, attempting direct purchase")
+                
+                // Fallback: Try direct purchase without price check
+                self.attemptDirectLifetimePurchase()
+                return
+            }
+            
+            // Check if this is a $0 lifetime purchase
+            let price = package.storeProduct.price
+            
+            // For testing: treat prices <= $0.99 as "free" (sandbox workaround)
+            // In production with actual $0.00, this will work as expected
+            #if DEBUG
+            let isFreeLifetime = (price <= 0.99)
+            print("PaywallView: Lifetime package price: \(price) (isFree: \(isFreeLifetime)) [DEBUG: treating ≤$0.99 as free]")
+            #else
+            let isFreeLifetime = (price == 0)
+            print("PaywallView: Lifetime package price: \(price) (isFree: \(isFreeLifetime))")
+            #endif
+            
+            // Purchase the lifetime package
+            self.subscriptionManager.purchaseLifetime { success, error in
+                DispatchQueue.main.async {
+                    self.isLoadingLifetime = false
+                    
+                    if success {
+                        HapticManager.shared.successFeedback()
+                        
+                        print("🗺 PaywallView: Purchase success - evaluating lifetime type...")
+                        print("  - isFreeLifetime: \(isFreeLifetime)")
+                        
+                        if isFreeLifetime {
+                            // For $0 lifetime users, set flag to show hard review screen
+                            print("✅ PaywallView: Free lifetime purchase successful, setting flag for hard review")
+                            appState.justMadeFreeLifetimePurchase = true
+                            print("🔔 PaywallView: Set justMadeFreeLifetimePurchase = true")
+                            
+                            // Let paywall dismiss normally - hard review will be shown by RockIdentifierApp
+                            presentationMode.wrappedValue.dismiss()
+                        } else {
+                            // For paying lifetime users, show normal success message
+                            print("💰 PaywallView: Paid lifetime purchase successful, showing success message")
+                            self.showSuccessMessage = true
+                        }
+                    } else if let error = error {
+                        if let nsError = error as NSError?, nsError.code == 1009 {
+                            // User cancelled - do nothing
+                            print("PaywallView: Lifetime purchase cancelled by user")
+                        } else {
+                            print("PaywallView: Lifetime purchase failed: \(error.localizedDescription)")
+                            HapticManager.shared.errorFeedback()
+                            self.showErrorAlert(message: error.localizedDescription)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private func attemptDirectLifetimePurchase() {
+        print("PaywallView: Attempting direct lifetime purchase without price check")
+        
+        // Purchase the lifetime directly (assumes not free since we couldn't check price)
+        self.subscriptionManager.purchaseLifetime { success, error in
             DispatchQueue.main.async {
                 self.isLoadingLifetime = false
                 
                 if success {
                     HapticManager.shared.successFeedback()
+                    // Since we couldn't check price, assume it's paid and show normal success
+                    print("PaywallView: Direct lifetime purchase successful, showing success message")
                     self.showSuccessMessage = true
                 } else if let error = error {
                     if let nsError = error as NSError?, nsError.code == 1009 {
                         // User cancelled - do nothing
+                        print("PaywallView: Direct lifetime purchase cancelled by user")
                     } else {
+                        print("PaywallView: Direct lifetime purchase failed: \(error.localizedDescription)")
                         HapticManager.shared.errorFeedback()
                         self.showErrorAlert(message: error.localizedDescription)
                     }
