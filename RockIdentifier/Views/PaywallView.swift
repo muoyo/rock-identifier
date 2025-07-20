@@ -35,6 +35,8 @@ struct PaywallView: View {
             }
         case .free:
             return "Continue"
+        case .lifetime:
+            return "Continue"
         }
     }
     

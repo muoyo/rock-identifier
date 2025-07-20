@@ -133,7 +133,7 @@ class SubscriptionManager: NSObject, ObservableObject {
                 } else if info.productIdentifier == RevenueCatConfig.Identifiers.yearlySubscription {
                     plan = .yearly
                 } else if info.productIdentifier == RevenueCatConfig.Identifiers.lifetimeAccess {
-                    plan = .yearly // Treat lifetime as yearly for display purposes, but it never expires
+                    plan = .lifetime
                 }
                 
                 // Get expiration date

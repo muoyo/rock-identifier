@@ -8,6 +8,7 @@ enum SubscriptionPlan: String, Codable {
     case free = "free"
     case weekly = "weekly"
     case yearly = "yearly"
+    case lifetime = "lifetime"
     
     var displayName: String {
         switch self {
@@ -17,6 +18,8 @@ enum SubscriptionPlan: String, Codable {
             return "Weekly"
         case .yearly:
             return "Yearly"
+        case .lifetime:
+            return "Lifetime"
         }
     }
     
@@ -29,6 +32,8 @@ enum SubscriptionPlan: String, Codable {
             return RevenueCatConfig.Identifiers.weeklySubscription
         case .yearly:
             return RevenueCatConfig.Identifiers.yearlySubscription
+        case .lifetime:
+            return RevenueCatConfig.Identifiers.lifetimeAccess
         }
     }
     
@@ -40,6 +45,8 @@ enum SubscriptionPlan: String, Codable {
             return "$7.99/week"
         case .yearly:
             return "$39.99/year"
+        case .lifetime:
+            return "Lifetime Access" // Don't hardcode price, will come from App Store
         }
     }
     
@@ -47,6 +54,8 @@ enum SubscriptionPlan: String, Codable {
         switch self {
         case .yearly:
             return "SAVE 80%"
+        case .lifetime:
+            return "BEST VALUE"
         default:
             return nil
         }
@@ -61,6 +70,11 @@ struct SubscriptionStatus: Codable {
     
     var isActive: Bool {
         guard plan != .free else { return false }
+        
+        // Lifetime purchases never expire
+        if plan == .lifetime {
+            return true
+        }
         
         if isInTrial, let trialEndDate = trialEndDate, trialEndDate > Date() {
             return true

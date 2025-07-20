@@ -20,7 +20,8 @@ struct SettingsView: View {
                     HStack {
                         Text("Subscription Status")
                         Spacer()
-                        Text(subscriptionManager.status.isActive ? "Premium" : "Free")
+                        Text(subscriptionManager.status.isActive ? 
+                             (subscriptionManager.status.plan == .lifetime ? "Lifetime" : "Premium") : "Free")
                             .foregroundColor(subscriptionManager.status.isActive ? .green : .orange)
                             .fontWeight(.medium)
                     }
@@ -50,13 +51,16 @@ struct SettingsView: View {
                     }
                     
                     if subscriptionManager.status.isActive {
-                        Button("Manage Subscription") {
-                            // Open subscription management in Settings app
-                            if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
-                                UIApplication.shared.open(url)
+                        // Only show "Manage Subscription" for actual subscriptions, not lifetime purchases
+                        if subscriptionManager.status.plan != .lifetime {
+                            Button("Manage Subscription") {
+                                // Open subscription management in Settings app
+                                if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                                    UIApplication.shared.open(url)
+                                }
                             }
+                            .foregroundColor(.blue)
                         }
-                        .foregroundColor(.blue)
                     }
                     
                     // Always show restore button for both free and premium users
