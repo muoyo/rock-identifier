@@ -82,7 +82,7 @@ struct CameraPermissionModalView: View {
                                     .font(.system(size: 16, weight: .medium))
                             }
                             
-                            Text(isRequestingPermission ? "Requesting Access..." : "Enable Camera")
+                            Text(isRequestingPermission ? "Requesting Access..." : "Continue")
                                 .font(.system(size: 17, weight: .semibold))
                         }
                         .foregroundColor(.white)
