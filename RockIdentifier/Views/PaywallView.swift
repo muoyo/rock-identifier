@@ -304,7 +304,7 @@ struct PaywallView: View {
     
     private var enhancedTrialToggle: some View {
         HStack(spacing: 12) {
-            Text("Not Sure? Enable Free Trial")
+            Text(trialEnabled ? "Free Trial Enabled" : "Not Sure? Enable Free Trial")
                 .textStyle(.headlineMedium)
                 .lineLimit(1)
             
