@@ -12,7 +12,6 @@ struct RockIdentifierApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
     @State private var showOnboarding = false
     @State private var showSplash = true
-    @State private var showOnboardingReviewPrompt = false
     
     // Initialize the subscription manager as a StateObject so it persists across the app
     @StateObject private var subscriptionManager = SubscriptionManager()
@@ -35,7 +34,7 @@ struct RockIdentifierApp: App {
     
     // MARK: - Helper Functions
     
-    /// Check and show paywall after onboarding/review prompt
+    /// Check and show paywall after onboarding
     private func checkAndShowPaywall() {
         print("RockIdentifierApp: Checking for paywall after onboarding")
         let showedHardPaywall = PaywallManager.shared.showHardPaywallIfNeeded()
@@ -45,6 +44,22 @@ struct RockIdentifierApp: App {
         if !showedHardPaywall {
             print("RockIdentifierApp: No hard paywall shown, showing soft paywall after onboarding")
             PaywallManager.shared.showSoftPaywall()
+        }
+    }
+    
+    /// Request native iOS rating prompt
+    private func requestNativeRating() {
+        print("RockIdentifierApp: Requesting native iOS rating")
+        
+        // Brief delay to ensure paywall is fully dismissed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            if let scene = UIApplication.shared.connectedScenes
+                .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene {
+                SKStoreReviewController.requestReview(in: scene)
+                print("RockIdentifierApp: Native rating prompt requested")
+            } else {
+                print("RockIdentifierApp: Could not find active window scene for rating prompt")
+            }
         }
     }
     
@@ -101,46 +116,30 @@ struct RockIdentifierApp: App {
             .sheet(isPresented: $showOnboarding, onDismiss: {
                 hasCompletedOnboarding = true
                 
-                // Show review prompt right after onboarding if appropriate
-                if ReviewPromptManager.shared.shouldShowOnboardingReviewPrompt() {
-                    print("RockIdentifierApp: Showing onboarding review prompt")
-                    // Brief delay to let onboarding fully dismiss
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        showOnboardingReviewPrompt = true
-                    }
-                } else {
-                    // If no review prompt, go straight to paywall check
+                // Go directly to paywall after onboarding
+                print("RockIdentifierApp: Onboarding completed, showing paywall")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                     checkAndShowPaywall()
                 }
             }) {
                 DelightfulOnboardingView(isPresented: $showOnboarding)
             }
             // Soft paywall sheet (can be dismissed)
-            .sheet(isPresented: $appState.showSoftPaywall) {
+            .sheet(isPresented: $appState.showSoftPaywall, onDismiss: {
+                // Show native iOS rating prompt after soft paywall dismissal
+                requestNativeRating()
+            }) {
                 PaywallView(isDismissable: true)
                     .environmentObject(subscriptionManager)
             }
             // Hard paywall sheet (cannot be dismissed)
-            .sheet(isPresented: $appState.showHardPaywall) {
+            .sheet(isPresented: $appState.showHardPaywall, onDismiss: {
+                // Show native iOS rating prompt after hard paywall dismissal
+                requestNativeRating()
+            }) {
                 PaywallView(isDismissable: false)
                     .environmentObject(subscriptionManager)
             }
-            // Onboarding review prompt
-            .overlay(
-                Group {
-                    if showOnboardingReviewPrompt {
-                        OnboardingReviewPromptView(isVisible: $showOnboardingReviewPrompt)
-                            .onDisappear {
-                                // Always show paywall after review prompt dismisses
-                                // Apple handles the rating dialog invisibly - we don't need to wait for it
-                                print("RockIdentifierApp: Review prompt dismissed, showing paywall")
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    checkAndShowPaywall()
-                                }
-                            }
-                    }
-                }
-            )
 
         }
     }

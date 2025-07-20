@@ -187,12 +187,3 @@ class ReviewPromptManager {
         UserDefaults.standard.removeObject(forKey: "review_prompt_dismissed_time")
     }
 }
-
-struct ReviewPromptView_Previews: PreviewProvider {
-    static var previews: some View {
-        ReviewPromptView(
-            isVisible: .constant(true),
-            rockName: "Amethyst"
-        )
-    }
-}
