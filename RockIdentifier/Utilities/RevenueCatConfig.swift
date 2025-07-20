@@ -15,13 +15,14 @@ struct RevenueCatConfig {
         // Product identifiers - These MUST match exactly with App Store Connect
         static let weeklySubscription = "com.appmagic.rockidentifier.weekly__"
         static let yearlySubscription = "com.appmagic.rockidentifier.yearly__"
+        static let lifetimeAccess = "com.appmagic.rockidentifier.lifetime"
         
         // Entitlement identifiers - These MUST match RevenueCat dashboard configuration
         static let premiumAccess = "premium_access"
         
         // Convenience method to get all product IDs
         static var allProductIDs: [String] {
-            return [weeklySubscription, yearlySubscription]
+            return [weeklySubscription, yearlySubscription, lifetimeAccess]
         }
     }
     

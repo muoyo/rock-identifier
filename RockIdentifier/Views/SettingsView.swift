@@ -9,6 +9,9 @@ struct SettingsView: View {
     @EnvironmentObject var subscriptionManager: SubscriptionManager
     @State private var showRestoreAlert = false
     @State private var restoreAlertMessage = ""
+    @State private var isLoadingLifetime = false
+    @State private var showLifetimeAlert = false
+    @State private var lifetimeAlertMessage = ""
     
     var body: some View {
         NavigationView {
@@ -38,6 +41,12 @@ struct SettingsView: View {
                             }
                         }
                         .foregroundColor(.blue)
+                        
+                        Button(isLoadingLifetime ? "Processing..." : "Get Lifetime Access") {
+                            purchaseLifetime()
+                        }
+                        .foregroundColor(.blue)
+                        .disabled(isLoadingLifetime)
                     }
                     
                     if subscriptionManager.status.isActive {
@@ -160,6 +169,35 @@ struct SettingsView: View {
                     message: Text(restoreAlertMessage),
                     dismissButton: .default(Text("OK"))
                 )
+            }
+            .alert(isPresented: $showLifetimeAlert) {
+                Alert(
+                    title: Text("Lifetime Purchase"),
+                    message: Text(lifetimeAlertMessage),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+        }
+    }
+    
+    private func purchaseLifetime() {
+        isLoadingLifetime = true
+        
+        subscriptionManager.purchaseLifetime { success, error in
+            DispatchQueue.main.async {
+                isLoadingLifetime = false
+                
+                if success {
+                    lifetimeAlertMessage = "Lifetime access purchased successfully! You now have unlimited access to all premium features."
+                    showLifetimeAlert = true
+                } else if let error = error {
+                    if let nsError = error as NSError?, nsError.code == 1009 {
+                        // User cancelled - do nothing
+                    } else {
+                        lifetimeAlertMessage = "Lifetime purchase failed: \(error.localizedDescription)"
+                        showLifetimeAlert = true
+                    }
+                }
             }
         }
     }

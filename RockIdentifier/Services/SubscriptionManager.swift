@@ -132,6 +132,8 @@ class SubscriptionManager: NSObject, ObservableObject {
                     plan = .weekly
                 } else if info.productIdentifier == RevenueCatConfig.Identifiers.yearlySubscription {
                     plan = .yearly
+                } else if info.productIdentifier == RevenueCatConfig.Identifiers.lifetimeAccess {
+                    plan = .yearly // Treat lifetime as yearly for display purposes, but it never expires
                 }
                 
                 // Get expiration date
@@ -328,6 +330,93 @@ class SubscriptionManager: NSObject, ObservableObject {
                         // This should rarely happen, but just in case
                         let verificationError = NSError(domain: "com.appmagic.rockidentifier", code: 1006, userInfo: [NSLocalizedDescriptionKey: "Subscription verification failed"])
                         self.lastErrorMessage = "Subscription verification failed. Please try restoring purchases."
+                        completion?(false, verificationError)
+                        return
+                    }
+                    
+                    // Success!
+                    completion?(true, nil)
+                }
+            }
+        }
+    }
+    
+    /// Purchases lifetime access
+    /// - Parameter completion: Optional callback with success/error information
+    func purchaseLifetime(completion: ((Bool, Error?) -> Void)? = nil) {
+        isLoading = true
+        lastErrorMessage = nil
+        
+        // Get the available packages and find lifetime access
+        Purchases.shared.getOfferings { [weak self] (offerings, error) in
+            guard let self = self else {
+                completion?(false, error)
+                return
+            }
+            
+            if let error = error {
+                print("Error fetching offerings for lifetime: \(error.localizedDescription)")
+                self.isLoading = false
+                self.lastErrorMessage = "Could not load lifetime option: \(error.localizedDescription)"
+                completion?(false, error)
+                return
+            }
+            
+            guard let offerings = offerings, let offering = offerings.current else {
+                print("No offerings available for lifetime")
+                self.isLoading = false
+                let noOfferingsError = NSError(domain: "com.appmagic.rockidentifier", code: 1007, userInfo: [NSLocalizedDescriptionKey: "Lifetime option not available"])
+                self.lastErrorMessage = "Lifetime option not available"
+                completion?(false, noOfferingsError)
+                return
+            }
+            
+            // Find the lifetime package
+            var lifetimePackage: Package?
+            for package in offering.availablePackages {
+                if package.storeProduct.productIdentifier == RevenueCatConfig.Identifiers.lifetimeAccess {
+                    lifetimePackage = package
+                    break
+                }
+            }
+            
+            guard let package = lifetimePackage else {
+                print("Could not find lifetime package")
+                self.isLoading = false
+                let noPackageError = NSError(domain: "com.appmagic.rockidentifier", code: 1008, userInfo: [NSLocalizedDescriptionKey: "Lifetime option not available"])
+                self.lastErrorMessage = "Lifetime option not available"
+                completion?(false, noPackageError)
+                return
+            }
+            
+            // Purchase the lifetime package
+            Purchases.shared.purchase(package: package) { (transaction, customerInfo, error, userCancelled) in
+                DispatchQueue.main.async {
+                    self.isLoading = false
+                    
+                    if userCancelled {
+                        print("User cancelled lifetime purchase")
+                        let cancelledError = NSError(domain: "com.appmagic.rockidentifier", code: 1009, userInfo: [NSLocalizedDescriptionKey: "Purchase cancelled"])
+                        self.lastErrorMessage = nil
+                        completion?(false, cancelledError)
+                        return
+                    }
+                    
+                    if let error = error {
+                        print("Lifetime purchase error: \(error.localizedDescription)")
+                        self.lastErrorMessage = "Lifetime purchase failed: \(error.localizedDescription)"
+                        completion?(false, error)
+                        return
+                    }
+                    
+                    // Update subscription status
+                    self.updateSubscriptionStatus(with: customerInfo)
+                    
+                    // Verify purchase success
+                    let purchaseSucceeded = self.status.isActive
+                    if !purchaseSucceeded {
+                        let verificationError = NSError(domain: "com.appmagic.rockidentifier", code: 1010, userInfo: [NSLocalizedDescriptionKey: "Lifetime purchase verification failed"])
+                        self.lastErrorMessage = "Lifetime purchase verification failed. Please try restoring purchases."
                         completion?(false, verificationError)
                         return
                     }

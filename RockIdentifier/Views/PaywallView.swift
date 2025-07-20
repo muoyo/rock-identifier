@@ -13,6 +13,7 @@ struct PaywallView: View {
     @State private var trialEnabled: Bool = true
     @State private var selectedPlan: SubscriptionPlan = .weekly
     @State private var isLoading: Bool = false
+    @State private var isLoadingLifetime: Bool = false
     @State private var showSuccessMessage: Bool = false
     @State private var canBeDismissed: Bool = false
     @State private var secondsUntilDismissable: Int = 5
@@ -445,6 +446,12 @@ struct PaywallView: View {
                 .frame(width: 4, height: 4)
             
             enhancedBottomLink(text: "Privacy", action: showPrivacy)
+            
+            Circle()
+                .fill(StyleGuide.Colors.amethystPurple.opacity(0.3))
+                .frame(width: 4, height: 4)
+            
+            enhancedBottomLink(text: "Lifetime", action: purchaseLifetime)
         }
         .padding(.bottom, 30)
     }
@@ -923,6 +930,29 @@ struct PaywallView: View {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let rootViewController = windowScene.windows.first?.rootViewController {
             rootViewController.present(alert, animated: true)
+        }
+    }
+    
+    private func purchaseLifetime() {
+        HapticManager.shared.mediumImpact()
+        isLoadingLifetime = true
+        
+        subscriptionManager.purchaseLifetime { success, error in
+            DispatchQueue.main.async {
+                self.isLoadingLifetime = false
+                
+                if success {
+                    HapticManager.shared.successFeedback()
+                    self.showSuccessMessage = true
+                } else if let error = error {
+                    if let nsError = error as NSError?, nsError.code == 1009 {
+                        // User cancelled - do nothing
+                    } else {
+                        HapticManager.shared.errorFeedback()
+                        self.showErrorAlert(message: error.localizedDescription)
+                    }
+                }
+            }
         }
     }
     
