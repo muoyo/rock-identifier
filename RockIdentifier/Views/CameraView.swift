@@ -134,13 +134,13 @@ struct CameraView: View {
                         // Remaining identifications counter (or unlimited for premium)
                         HStack(spacing: 4) {
                             Image(systemName: remainingIdentifications == Int.max ? "infinity" : "camera.viewfinder")
-                            .foregroundColor(remainingIdentifications == Int.max ? .blue : (remainingIdentifications < 2 ? .orange : .green))
+                            .foregroundColor(remainingIdentifications == Int.max ? StyleGuide.Colors.roseQuartzPink : (remainingIdentifications < 2 ? .orange : .green))
                             .font(.system(size: 12))
                             
                             Text(remainingIdentifications == Int.max ? "Unlimited" : "\(remainingIdentifications)/3 remaining")
                             .font(.caption)
                             .fontWeight(.medium)
-                            .foregroundColor(remainingIdentifications == Int.max ? .blue : (remainingIdentifications < 2 ? .orange : .white))
+                            .foregroundColor(remainingIdentifications == Int.max ? StyleGuide.Colors.roseQuartzPink : (remainingIdentifications < 2 ? .orange : .white))
                         }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -148,7 +148,7 @@ struct CameraView: View {
                     .cornerRadius(15)
                     .overlay(
                         RoundedRectangle(cornerRadius: 15)
-                            .stroke(remainingIdentifications == Int.max ? Color.blue.opacity(0.5) : 
+                            .stroke(remainingIdentifications == Int.max ? StyleGuide.Colors.roseQuartzPink.opacity(0.5) : 
                                    (remainingIdentifications < 2 ? Color.orange.opacity(0.7) : Color.green.opacity(0.3)), lineWidth: 1)
                     )
                     .padding(.leading)
@@ -316,7 +316,15 @@ struct CameraView: View {
                                 
                                 // Inner button
                                 Circle()
-                                    .fill(Color.blue)
+                                    .fill(LinearGradient(
+                                        gradient: Gradient(colors: [
+                                            StyleGuide.Colors.roseQuartzPink,
+                                            StyleGuide.Colors.roseQuartzPinkDark,
+                                            Color(hexString: "8B0020")
+                                        ]), 
+                                        startPoint: .topLeading, 
+                                        endPoint: .bottomTrailing
+                                    ))
                                     .frame(width: 76, height: 76)
                                 
                                 // Camera icon
@@ -385,7 +393,7 @@ struct CameraView: View {
                     
                     // Subtle capture animation
                     Circle()
-                        .stroke(Color.blue.opacity(0.5), lineWidth: 5)
+                        .stroke(StyleGuide.Colors.roseQuartzPink.opacity(0.5), lineWidth: 5)
                         .frame(width: 100, height: 100)
                         .scaleEffect(shutterFlash ? 1.5 : 1.0)
                         .opacity(shutterFlash ? 0 : 1)
