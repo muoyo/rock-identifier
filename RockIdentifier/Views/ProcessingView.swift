@@ -100,8 +100,12 @@ struct ProcessingView: View {
     // Animation timing (ms per stage)
     private let stageDurations: [TimeInterval] = [1.5, 3.0, 3.0, 2.5, 2.5, 1.5, 0.5]
     
-    // Background gradient colors
-    private let gradientColors = [Color(hex: "191970"), Color(hex: "000033")]
+    // Background gradient colors - rose quartz theme
+    private let gradientColors = [
+        StyleGuide.Colors.roseQuartzPink,
+        StyleGuide.Colors.roseQuartzPinkDark,
+        Color(hexString: "8B0020") // Even deeper rose quartz red
+    ]
     
     var body: some View {
         GeometryReader { geometry in
