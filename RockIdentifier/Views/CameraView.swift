@@ -16,6 +16,9 @@ struct CameraView: View {
     // Use a @StateObject to ensure the delegate persists throughout view lifecycle
     @StateObject private var photoCaptureDelegate = PhotoCaptureDelegate()
     
+    // Add state to prevent concurrent configuration
+    @State private var isConfiguringSession: Bool = false
+    
     @State private var shutterFlash: Bool = false
     
     // Callback for when an image is captured
@@ -461,6 +464,9 @@ struct CameraView: View {
     
     private func stopCameraSession() {
         DispatchQueue.main.async {
+            // Reset configuration flag
+            self.isConfiguringSession = false
+            
             if let captureSession = self.captureSession, captureSession.isRunning {
                 DispatchQueue.global(qos: .userInitiated).async {
                     print("==> captureSession.stopRunning()")
@@ -497,6 +503,14 @@ struct CameraView: View {
     private func setupCamera() {
         // Ensure setup happens on main thread for state consistency
         DispatchQueue.main.async {
+            // Prevent concurrent configuration calls
+            guard !self.isConfiguringSession else {
+                print("==> Camera setup already in progress, skipping")
+                return
+            }
+            
+            self.isConfiguringSession = true
+            
             // Initialize capture session if needed
             if self.captureSession == nil {
                 self.captureSession = AVCaptureSession()
@@ -508,7 +522,15 @@ struct CameraView: View {
             guard let captureSession = self.captureSession,
                   let photoOutput = self.photoOutput else {
                 print("==> ERROR: Failed to initialize camera session")
+                self.isConfiguringSession = false
                 return
+            }
+            
+            // CRITICAL: Ensure session is not already running before configuration
+            let wasRunning = captureSession.isRunning
+            if wasRunning {
+                print("==> Stopping session before reconfiguration")
+                captureSession.stopRunning()
             }
             
             // Configure the capture session for photo capture
@@ -526,6 +548,7 @@ struct CameraView: View {
                   let videoInput = try? AVCaptureDeviceInput(device: videoDevice) else {
                 print("==> ERROR: Failed to create video input")
                 captureSession.commitConfiguration()
+                self.isConfiguringSession = false
                 return
             }
             
@@ -548,6 +571,7 @@ struct CameraView: View {
             } else {
                 print("==> ERROR: Cannot add video input")
                 captureSession.commitConfiguration()
+                self.isConfiguringSession = false
                 return
             }
             
@@ -568,15 +592,28 @@ struct CameraView: View {
             } else {
                 print("==> ERROR: Cannot add photo output")
                 captureSession.commitConfiguration()
+                self.isConfiguringSession = false
                 return
             }
             
+            // CRITICAL: Always commit configuration before starting session
             captureSession.commitConfiguration()
             
-            // Start running the capture session
-            if !captureSession.isRunning {
-                DispatchQueue.global(qos: .userInitiated).async {
-                    captureSession.startRunning()
+            // Wait a brief moment after commit before starting to ensure configuration is complete
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                // Start running the capture session only if not already running
+                if !captureSession.isRunning {
+                    print("==> Starting camera session after configuration")
+                    DispatchQueue.global(qos: .userInitiated).async {
+                        captureSession.startRunning()
+                        DispatchQueue.main.async {
+                            print("==> Camera session started successfully")
+                            self.isConfiguringSession = false
+                        }
+                    }
+                } else {
+                    print("==> Camera session already running")
+                    self.isConfiguringSession = false
                 }
             }
             
@@ -589,6 +626,15 @@ struct CameraView: View {
     // Safe photo capture with proper error handling and session validation
     private func capturePhotoSafely() {
         DispatchQueue.main.async {
+            // Don't attempt capture if session is being configured
+            guard !self.isConfiguringSession else {
+                print("==> Camera session is being configured, cannot capture photo now")
+                withAnimation {
+                    self.shutterFlash = false
+                }
+                return
+            }
+            
             // Validate session state
             guard let captureSession = self.captureSession,
                   let photoOutput = self.photoOutput else {
