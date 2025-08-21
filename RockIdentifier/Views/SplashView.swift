@@ -160,66 +160,142 @@ struct SplashView: View {
 
 // MARK: - Component Views
 
-// Viewfinder corners - using rectangles with rounded corners for smoother appearance
+// Viewfinder corners - smooth L-shaped corners with curved transitions
 struct ViewfinderCorners: View {
     var body: some View {
         ZStack {
-            // Top left corner
-            Group {
-                Rectangle()
-                    .frame(width: 10, height: 40)
-                    .cornerRadius(1)
-                    .position(x: 30, y: 50)
-                
-                Rectangle()
-                    .frame(width: 40, height: 10)
-                    .cornerRadius(1)
-                    .position(x: 50, y: 30)
-            }
-            .foregroundColor(.black)
+            // Top left
+            SmoothRockCorner(position: .topLeft)
             
-            // Top right corner
-            Group {
-                Rectangle()
-                    .frame(width: 10, height: 40)
-                    .cornerRadius(1)
-                    .position(x: 310, y: 50)
-                
-                Rectangle()
-                    .frame(width: 40, height: 10)
-                    .cornerRadius(1)
-                    .position(x: 290, y: 30)
-            }
-            .foregroundColor(.black)
+            // Top right
+            SmoothRockCorner(position: .topRight)
             
-            // Bottom left corner
-            Group {
-                Rectangle()
-                    .frame(width: 10, height: 40)
-                    .cornerRadius(1)
-                    .position(x: 30, y: 290)
-                
-                Rectangle()
-                    .frame(width: 40, height: 10)
-                    .cornerRadius(1)
-                    .position(x: 50, y: 310)
-            }
-            .foregroundColor(.black)
+            // Bottom left
+            SmoothRockCorner(position: .bottomLeft)
             
-            // Bottom right corner
-            Group {
-                Rectangle()
-                    .frame(width: 10, height: 40)
-                    .cornerRadius(1)
-                    .position(x: 310, y: 290)
-                
-                Rectangle()
-                    .frame(width: 40, height: 10)
-                    .cornerRadius(1)
-                    .position(x: 290, y: 310)
-            }
-            .foregroundColor(.black)
+            // Bottom right
+            SmoothRockCorner(position: .bottomRight)
         }
+    }
+}
+
+// Individual smooth corner for rock theme
+struct SmoothRockCorner: View {
+    enum Position {
+        case topLeft, topRight, bottomLeft, bottomRight
+    }
+    
+    let position: Position
+    private let thickness: CGFloat = 8
+    private let length: CGFloat = 50
+    private let cornerRadius: CGFloat = 3
+    
+    var body: some View {
+        Path { path in
+            switch position {
+            case .topLeft:
+                // Start from horizontal end
+                path.move(to: CGPoint(x: 30 + length, y: 30))
+                // Line to corner
+                path.addLine(to: CGPoint(x: 30 + cornerRadius, y: 30))
+                // Curved corner
+                path.addQuadCurve(
+                    to: CGPoint(x: 30, y: 30 + cornerRadius),
+                    control: CGPoint(x: 30, y: 30)
+                )
+                // Line to vertical end
+                path.addLine(to: CGPoint(x: 30, y: 30 + length))
+                // Thickness - vertical side
+                path.addLine(to: CGPoint(x: 30 + thickness, y: 30 + length))
+                // Back to corner (inside)
+                path.addLine(to: CGPoint(x: 30 + thickness, y: 30 + thickness + cornerRadius))
+                // Inner curve
+                path.addQuadCurve(
+                    to: CGPoint(x: 30 + thickness + cornerRadius, y: 30 + thickness),
+                    control: CGPoint(x: 30 + thickness, y: 30 + thickness)
+                )
+                // Back to start
+                path.addLine(to: CGPoint(x: 30 + length, y: 30 + thickness))
+                path.closeSubpath()
+                
+            case .topRight:
+                // Start from horizontal start
+                path.move(to: CGPoint(x: 310 - length, y: 30))
+                // Line to corner
+                path.addLine(to: CGPoint(x: 310 - cornerRadius, y: 30))
+                // Curved corner
+                path.addQuadCurve(
+                    to: CGPoint(x: 310, y: 30 + cornerRadius),
+                    control: CGPoint(x: 310, y: 30)
+                )
+                // Line to vertical end
+                path.addLine(to: CGPoint(x: 310, y: 30 + length))
+                // Thickness - vertical side
+                path.addLine(to: CGPoint(x: 310 - thickness, y: 30 + length))
+                // Back to corner (inside)
+                path.addLine(to: CGPoint(x: 310 - thickness, y: 30 + thickness + cornerRadius))
+                // Inner curve
+                path.addQuadCurve(
+                    to: CGPoint(x: 310 - thickness - cornerRadius, y: 30 + thickness),
+                    control: CGPoint(x: 310 - thickness, y: 30 + thickness)
+                )
+                // Back to start
+                path.addLine(to: CGPoint(x: 310 - length, y: 30 + thickness))
+                path.closeSubpath()
+                
+            case .bottomLeft:
+                // Start from horizontal end
+                path.move(to: CGPoint(x: 30 + length, y: 310))
+                // Line to corner
+                path.addLine(to: CGPoint(x: 30 + cornerRadius, y: 310))
+                // Curved corner
+                path.addQuadCurve(
+                    to: CGPoint(x: 30, y: 310 - cornerRadius),
+                    control: CGPoint(x: 30, y: 310)
+                )
+                // Line to vertical end
+                path.addLine(to: CGPoint(x: 30, y: 310 - length))
+                // Thickness - vertical side
+                path.addLine(to: CGPoint(x: 30 + thickness, y: 310 - length))
+                // Back to corner (inside)
+                path.addLine(to: CGPoint(x: 30 + thickness, y: 310 - thickness - cornerRadius))
+                // Inner curve
+                path.addQuadCurve(
+                    to: CGPoint(x: 30 + thickness + cornerRadius, y: 310 - thickness),
+                    control: CGPoint(x: 30 + thickness, y: 310 - thickness)
+                )
+                // Back to start
+                path.addLine(to: CGPoint(x: 30 + length, y: 310 - thickness))
+                path.closeSubpath()
+                
+            case .bottomRight:
+                // Start from horizontal start
+                path.move(to: CGPoint(x: 310 - length, y: 310))
+                // Line to corner
+                path.addLine(to: CGPoint(x: 310 - cornerRadius, y: 310))
+                // Curved corner
+                path.addQuadCurve(
+                    to: CGPoint(x: 310, y: 310 - cornerRadius),
+                    control: CGPoint(x: 310, y: 310)
+                )
+                // Line to vertical end
+                path.addLine(to: CGPoint(x: 310, y: 310 - length))
+                // Thickness - vertical side
+                path.addLine(to: CGPoint(x: 310 - thickness, y: 310 - length))
+                // Back to corner (inside)
+                path.addLine(to: CGPoint(x: 310 - thickness, y: 310 - thickness - cornerRadius))
+                // Inner curve
+                path.addQuadCurve(
+                    to: CGPoint(x: 310 - thickness - cornerRadius, y: 310 - thickness),
+                    control: CGPoint(x: 310 - thickness, y: 310 - thickness)
+                )
+                // Back to start
+                path.addLine(to: CGPoint(x: 310 - length, y: 310 - thickness))
+                path.closeSubpath()
+            }
+        }
+        .fill(Color.black) // Keeping existing black color for rock theme
+        .shadow(color: Color.black.opacity(0.3), radius: 2, x: 0, y: 1)
     }
 }
 
@@ -318,7 +394,7 @@ struct CenterFacet: View {
     }
 }
 
-// Scan line
+// Enhanced scan line with smooth gradient and glow
 struct ScanLine: View {
     var position: Double // 0.0 (top) to 1.0 (bottom)
     
@@ -326,22 +402,32 @@ struct ScanLine: View {
         let yPosition = 70.0 + position * 210.0 // Map 0-1 to 70-280 (crystal bounds)
         
         ZStack {
-            // Dashed line with correct styling to match icon
-            HStack(spacing: 10) {
-                ForEach(0..<12) { _ in
-                    Rectangle()
-                        .frame(width: 15, height: 5)
-                        .foregroundColor(.black)
-                }
-            }
-            .position(x: 170, y: yPosition)
-            
-            // Subtle glow effect
+            // Main scan line with rock-themed gradient
             Rectangle()
-                .frame(width: 260, height: 3)
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [
+                            Color.clear,
+                            Color(hex: "FF3B5C"), // Primary rock pink
+                            Color(hex: "FF6B8A"), // Lighter rock pink
+                            Color(hex: "FFB6C1"), // Soft rock pink
+                            Color(hex: "FF6B8A"), // Lighter rock pink
+                            Color(hex: "FF3B5C"), // Primary rock pink
+                            Color.clear
+                        ]), 
+                        startPoint: .leading, 
+                        endPoint: .trailing
+                    )
+                )
+                .frame(width: 280, height: 2)
                 .position(x: 170, y: yPosition)
-                .foregroundColor(Color(hex: "FF3B5C").opacity(0.1))
-                .blur(radius: 2)
+            
+            // Enhanced glow effect
+            Rectangle()
+                .fill(Color(hex: "FF3B5C").opacity(0.4))
+                .frame(width: 260, height: 8)
+                .blur(radius: 4)
+                .position(x: 170, y: yPosition)
         }
     }
 }
