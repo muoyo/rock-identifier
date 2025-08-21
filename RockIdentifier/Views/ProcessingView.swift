@@ -133,7 +133,7 @@ struct ProcessingView: View {
                         .shadow(color: .black.opacity(0.7), radius: 2, x: 0, y: 1)
                         .opacity(1.0)
                         .scaleEffect(pulseScale)
-                        .padding(.top, 20)
+                        .padding(.top, 60)
                     
                     // Rock image display
                     ZStack {
@@ -141,7 +141,7 @@ struct ProcessingView: View {
                             Image(uiImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: min(geometry.size.width * 0.7, 250), height: min(geometry.size.width * 0.7, 250))
+                                .frame(width: min(400, geometry.size.width * 0.9), height: min(320, geometry.size.width * 0.72))
                                 .clipShape(RoundedRectangle(cornerRadius: 20))
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 20)
@@ -153,7 +153,7 @@ struct ProcessingView: View {
                             // Placeholder if no image
                             RoundedRectangle(cornerRadius: 20)
                                 .fill(Color.gray.opacity(0.3))
-                                .frame(width: min(geometry.size.width * 0.7, 250), height: min(geometry.size.width * 0.7, 250))
+                                .frame(width: min(400, geometry.size.width * 0.9), height: min(320, geometry.size.width * 0.72))
                                 .overlay(
                                     Image(systemName: "photo")
                                         .font(.system(size: 50))
@@ -168,7 +168,7 @@ struct ProcessingView: View {
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ))
-                            .frame(width: min(geometry.size.width * 0.7, 250), height: 3)
+                            .frame(width: min(400, geometry.size.width * 0.9), height: 3)
                             .offset(y: scanLinePosition * min(geometry.size.width * 0.7, 250) / 2)
                             .opacity(currentStage == .complete ? 0 : 1)
                         
@@ -562,11 +562,5 @@ struct StepIndicator: View {
         } else {
             return .gray.opacity(0.3)
         }
-    }
-}
-
-struct ProcessingView_Previews: PreviewProvider {
-    static var previews: some View {
-        ProcessingView(isVisible: .constant(true), capturedImage: UIImage(systemName: "photo"))
     }
 }
